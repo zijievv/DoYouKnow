@@ -33,6 +33,8 @@ final class Question: Codable {
 extension Question: Migration {}
 /// Allows `Question` to be encoded to and decoded from HTTP messages.
 extension Question: Content {}
+/// Allows `Question` to be used as a dynamic parameter in route definitions.
+extension Question: Parameter {}
 /// Makes `Question` conform to Fluent's `Model`.
 extension Question: MySQLModel {}
 //
