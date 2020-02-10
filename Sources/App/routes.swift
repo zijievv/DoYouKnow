@@ -20,6 +20,8 @@ public func routes(_ router: Router) throws {
       return "Hello, world!"
   }
 
+  let questionsController = QuestionsController()
+  try router.register(collection: questionsController)
 //  // Example of configuring a controller
 //  let todoController = TodoController()
 //  router.get("todos", use: todoController.index)

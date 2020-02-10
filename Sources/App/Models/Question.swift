@@ -9,11 +9,20 @@
 import Vapor
 import FluentSQLite
 
+/// Stores the submitted questions of users.
 final class Question: Codable {
+  /// ID of the question.
   var id: Int?
+  /// The question.
   var question: String
+  /// The detail of the question.
   var detail: String
   
+  /// Creates a `Question` instance.
+  ///
+  /// - Parameters:
+  ///   - question: The question.
+  ///   - detail: The detail of the question.
   init(question: String, detail: String) {
     self.question = question
     self.detail = detail
@@ -22,7 +31,9 @@ final class Question: Codable {
 
 /// Allows `Question` to be used as a dynamis migration.
 extension Question: Migration {}
-
+/// Allows `Question` to be encoded to and decoded from HTTP messages.
+extension Question: Content {}
+/// Makes `Question` conform to Fluent's `Model`.
 extension Question: SQLiteModel {}
 //
 // Above ↑
