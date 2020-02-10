@@ -7,7 +7,7 @@
 //
 
 import Vapor
-import FluentSQLite
+import FluentMySQL
 
 /// Stores the submitted questions of users.
 final class Question: Codable {
@@ -34,7 +34,7 @@ extension Question: Migration {}
 /// Allows `Question` to be encoded to and decoded from HTTP messages.
 extension Question: Content {}
 /// Makes `Question` conform to Fluent's `Model`.
-extension Question: SQLiteModel {}
+extension Question: MySQLModel {}
 //
 // Above ↑
 // replaces
