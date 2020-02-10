@@ -17,7 +17,7 @@ struct QuestionsController: RouteCollection {
     questionsRoutes.get(Question.parameter, use: getHandler)
     questionsRoutes.get("first", use: getFirstHandler)
     questionsRoutes.get("sorted", use: sortedHandler)
-    questionsRoutes.post(use: createHandler)
+    questionsRoutes.post(Question.self, use: createHandler)
     questionsRoutes.put(Question.parameter, use: updateHandler)
     questionsRoutes.delete(Question.parameter, use: deleteHandler)
   }
@@ -59,15 +59,17 @@ struct QuestionsController: RouteCollection {
   /// Route at `/api/questions/` that accepts a POST request and returns
   /// `Future<Question>`.
   /// It returns the question once it's saved.
-  func createHandler(_ req: Request) throws -> Future<Question> {
-    // Decode the request's JSON into an `Question` model using `Codable`.
-    return try req.content.decode(Question.self)
-      .flatMap(to: Question.self) { question in
-        // Save the model using Fluen.
-        // Returns `Future<Question>` as it returns the model once it's
-        // saved.
-        return question.save(on: req)
-    }
+  func createHandler(_ req: Request,
+                     question: Question) throws -> Future<Question> {
+    return question.save(on: req)
+//    // Decode the request's JSON into an `Question` model using `Codable`.
+//    return try req.content.decode(Question.self)
+//      .flatMap(to: Question.self) { question in
+//        // Save the model using Fluen.
+//        // Returns `Future<Question>` as it returns the model once it's
+//        // saved.
+//        return question.save(on: req)
+//    }
   }
   
   /// Updates a question with specified ID.
