@@ -23,9 +23,7 @@ public func routes(_ router: Router) throws {
 
   let questionsController = QuestionsController()
   try router.register(collection: questionsController)
-//  // Example of configuring a controller
-//  let todoController = TodoController()
-//  router.get("todos", use: todoController.index)
-//  router.post("todos", use: todoController.create)
-//  router.delete("todos", Todo.parameter, use: todoController.delete)
+  
+  let usersController = UsersController()
+  try router.register(collection: usersController)
 }
