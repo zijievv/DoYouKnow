@@ -39,6 +39,11 @@ extension Question {
     return parent(\.userID)
   }
   
+  /// The computed property gets the owned `Answer` objects.
+  var answers: Children<Question, Answer> {
+    return children(\.questionID)
+  }
+  
   /// The computed property gets the question's categories.
   var categories: Siblings<Question, Category, QuestionCategoryPivot> {
     return siblings()

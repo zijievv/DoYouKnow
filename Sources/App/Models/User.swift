@@ -25,7 +25,13 @@ final class User: Codable {
 }
 
 extension User {
+  /// The computed property gets the owned `Question` objects.
   var questions: Children<User, Question> {
+    return children(\.userID)
+  }
+  
+  /// The computed property gets the owned `Answer` objects.
+  var answers: Children<User, Answer> {
     return children(\.userID)
   }
 }

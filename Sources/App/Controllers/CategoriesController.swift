@@ -12,14 +12,16 @@ struct CategoriesController: RouteCollection {
   func boot(router: Router) throws {
     let categoriesRoute = router.grouped("api", "categories")
     
+    // About Category.
     categoriesRoute.get(use: getAllHandler)
     categoriesRoute.get(Category.parameter, use: getHandler)
+    categoriesRoute.post(Category.self, use: createHandler)
+    // About Question.
     categoriesRoute.get(Category.parameter, "questions",
                         use: getQuestionsHandler)
-    categoriesRoute.post(Category.self, use: createHandler)
   }
   
-  // MARK: GET requests.
+  // MARK:- About `Category`.
   /// Gets all categories.
   ///
   /// Route at `/api/categories/`.
@@ -34,6 +36,15 @@ struct CategoriesController: RouteCollection {
     return try req.parameters.next(Category.self)
   }
   
+  /// Creates a new category.
+  ///
+  /// Route at `/api/categories/`. It returns the category once it's saved.
+  func createHandler(_ req: Request,
+                     category: Category) throws -> Future<Category> {
+    return category.save(on: req)
+  }
+  
+  // MARK:- About `Question`.
   /// Gets the questions tagged by the category.
   ///
   /// Route at `/api/categories/<category ID>/questions/`.
@@ -42,14 +53,5 @@ struct CategoriesController: RouteCollection {
       .flatMap(to: [Question].self) { category in
         try category.questions.query(on: req).all()
     }
-  }
-  
-  // MARK: POST & PUT & DELETE requests.
-  /// Creates a new category.
-  ///
-  /// Route at `/api/categories/`. It returns the category once it's saved.
-  func createHandler(_ req: Request,
-                     category: Category) throws -> Future<Category> {
-    return category.save(on: req)
   }
 }
