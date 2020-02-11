@@ -15,11 +15,25 @@ struct QuestionsController: RouteCollection {
     
     questionsRoutes.get(use: getAllHandler)
     questionsRoutes.get(Question.parameter, use: getHandler)
+    questionsRoutes.get(Question.parameter, "user", use: getUserHandler)
+    questionsRoutes.get(Question.parameter, "categories",
+                        use: getCategoriesHandler)
     questionsRoutes.get("first", use: getFirstHandler)
     questionsRoutes.get("sorted", use: sortedHandler)
+    
     questionsRoutes.post(Question.self, use: createHandler)
+    questionsRoutes.post(Question.parameter,
+                         "categories",
+                         Category.parameter,
+                         use: addCategoriesHandler)
+    
     questionsRoutes.put(Question.parameter, use: updateHandler)
+    
     questionsRoutes.delete(Question.parameter, use: deleteHandler)
+    questionsRoutes.delete(Question.parameter,
+                           "categories",
+                           Category.parameter,
+                           use: removeCategoriesHandler)
   }
   
   // MARK: GET requests.
@@ -37,6 +51,26 @@ struct QuestionsController: RouteCollection {
   /// returns `Future<Questions>`.
   func getHandler(_ req: Request) throws -> Future<Question> {
     return try req.parameters.next(Question.self)
+  }
+  
+  /// Gets the user owning the question.
+  ///
+  /// Route at `/api/questions/<question ID>/user`.
+  func getUserHandler(_ req: Request) throws -> Future<User> {
+    return try req.parameters.next(Question.self)
+      .flatMap(to: User.self) { question in
+        question.user.get(on: req)
+    }
+  }
+  
+  /// Gets the categories of the question.
+  ///
+  /// Route at `/api/questions/<question ID>/categories`.
+  func getCategoriesHandler(_ req: Request) throws -> Future<[Category]> {
+    return try req.parameters.next(Question.self)
+      .flatMap(to: [Category].self) { question in
+        try question.categories.query(on: req).all()
+    }
   }
   
   /// Gets the first question.
@@ -58,7 +92,8 @@ struct QuestionsController: RouteCollection {
   ///
   /// Route at `/api/questions/` that accepts a POST request and returns
   /// `Future<Question>`.
-  /// It returns the question once it's saved.
+  ///
+  /// - Returns: The question once it's saved.
   func createHandler(_ req: Request,
                      question: Question) throws -> Future<Question> {
     return question.save(on: req)
@@ -72,11 +107,36 @@ struct QuestionsController: RouteCollection {
 //    }
   }
   
+  /// Sets up the relationship between a question and a category.
+  ///
+  /// Route at `/api/questions/<question ID>/categories/<category ID>`.
+  ///
+  /// - Returns: The `HTTPStatus` once the relationship is
+  /// setted up.
+  func addCategoriesHandler(_ req: Request) throws -> Future<HTTPStatus> {
+    // Use `flatMap(to:_:_:)` to extract both the `question` and `category`
+    // from the request's parameters.
+    return try flatMap(
+      to: HTTPStatus.self,
+      req.parameters.next(Question.self),
+      req.content.decode(Category.self)) {
+        question, category in
+        return question.categories
+          // Use `attach(to:on:)` to set up the relationship between
+          // `question` and `category`.
+          // Creates a pivot model and saves it in the database.
+          .attach(category, on: req)
+          // Transform the result into a `201 Created` response.
+          .transform(to: .created)
+    }
+  }
+  
   /// Updates a question with specified ID.
   ///
   /// Route at `/api/questions/<question ID>` that accepts a PUT request and
   /// returns `Future<Questions>`.
-  /// It returns the question once it's saved.
+  ///
+  /// - Returns: The question once it's saved.
   func updateHandler(_ req: Request) throws -> Future<Question> {
     return try flatMap(
       to: Question.self,
@@ -91,12 +151,33 @@ struct QuestionsController: RouteCollection {
   
   /// Deletes a question with specified ID.
   ///
-  /// Route at `/api/questions/<question ID>` that accepts a DELETE request
-  /// and returns `Future<HTTPStatus>`.
+  /// Route at `/api/questions/<question ID>`.
+  ///
+  /// - Returns: The `HTTPStatus` once the question is deleted.
   func deleteHandler(_ req: Request) throws -> Future<HTTPStatus> {
     return try req.parameters
       .next(Question.self)
       .delete(on: req)
       .transform(to: .noContent)
+  }
+  
+  /// Removes the relationship between a question and a category.
+  ///
+  /// Route at `/api/questions/<question ID>/categories/<categories ID>`.
+  func removeCategoriesHandler(_ req: Request) throws -> Future<HTTPStatus> {
+    // Use `flatMap(to:_:_:)` to extract both the question and category from
+    // the request's parameters.
+    return try flatMap(
+      to: HTTPStatus.self,
+      req.parameters.next(Question.self),
+      req.parameters.next(Category.self)) { question, category in
+        return question.categories
+          // Use `detach(_:on:)` to remove the relationship between
+          // `question` and `category`.
+          // This finds the pivot model in the database and deletes it.
+          .detach(category, on: req)
+          // Transform the result into a `204 No Content` response.
+          .transform(to: .noContent)
+    }
   }
 }

@@ -11,30 +11,60 @@ import FluentMySQL
 
 /// Stores the submitted questions of users.
 final class Question: Codable {
-  /// ID of the question.
+  /// The ID of the question.
   var id: Int?
   /// The question.
   var question: String
   /// The detail of the question.
   var detail: String
+  /// The user's ID.
+  var userID: User.ID
   
   /// Creates a `Question` instance.
   ///
   /// - Parameters:
   ///   - question: The question.
   ///   - detail: The detail of the question.
-  init(question: String, detail: String) {
+  ///   - userID: The user's ID.
+  init(question: String, detail: String, userID: User.ID) {
     self.question = question
     self.detail = detail
+    self.userID = userID
+  }
+}
+
+extension Question {
+  /// The computed property gets the `User` object who owns the question.
+  var user: Parent<Question, User> {
+    return parent(\.userID)
+  }
+  
+  /// The computed property gets the question's categories.
+  var categories: Siblings<Question, Category, QuestionCategoryPivot> {
+    return siblings()
   }
 }
 
 /// Allows `Question` to be used as a dynamis migration.
-extension Question: Migration {}
+extension Question: Migration {
+  static func prepare(on connection: MySQLConnection) -> Future<Void> {
+    // Create the table for `Question` in the database.
+    return Database.create(self, on: connection) { builder in
+      // Use `addProperties(to:)` to add all the fields to the database.
+      try addProperties(to: builder)
+      // Add a reference between the userID on `Question` and the id property
+      // on `User`. This sets up the foreign key constraint between the
+      // two tables.
+      builder.reference(from: \.userID, to: \User.id)
+    }
+  }
+}
+
 /// Allows `Question` to be encoded to and decoded from HTTP messages.
 extension Question: Content {}
 /// Allows `Question` to be used as a dynamic parameter in route definitions.
 extension Question: Parameter {}
+
 /// Makes `Question` conform to Fluent's `Model`.
 extension Question: MySQLModel {}
 //

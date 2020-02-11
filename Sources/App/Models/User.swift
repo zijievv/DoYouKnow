@@ -24,6 +24,12 @@ final class User: Codable {
   }
 }
 
+extension User {
+  var questions: Children<User, Question> {
+    return children(\.userID)
+  }
+}
+
 /// Makes the `User` model conform to Fluent's `Model`.
 extension User: MySQLUUIDModel {}
 /// Allows `User` to be encoded to and decoded from HTTP messages.

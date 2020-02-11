@@ -14,6 +14,8 @@ struct CategoriesController: RouteCollection {
     
     categoriesRoute.get(use: getAllHandler)
     categoriesRoute.get(Category.parameter, use: getHandler)
+    categoriesRoute.get(Category.parameter, "questions",
+                        use: getQuestionsHandler)
     categoriesRoute.post(Category.self, use: createHandler)
   }
   
@@ -30,6 +32,16 @@ struct CategoriesController: RouteCollection {
   /// Route at `/api/categories/<category ID>`.
   func getHandler(_ req: Request) throws -> Future<Category> {
     return try req.parameters.next(Category.self)
+  }
+  
+  /// Gets the questions tagged by the category.
+  ///
+  /// Route at `/api/categories/<category ID>/questions/`.
+  func getQuestionsHandler(_ req: Request) throws -> Future<[Question]> {
+    return try req.parameters.next(Category.self)
+      .flatMap(to: [Question].self) { category in
+        try category.questions.query(on: req).all()
+    }
   }
   
   // MARK: POST & PUT & DELETE requests.

@@ -9,12 +9,22 @@
 import Vapor
 import FluentMySQL
 
+/// Stores the categories using to tag the questions.
 final class Category: Codable {
+  /// The ID of the category.
   var id: Int?
+  /// The category's name.
   var name: String
   
   init(name: String) {
     self.name = name
+  }
+}
+
+extension Category {
+  /// The computed property gets the categories the question tagged.
+  var questions: Siblings<Category, Question, QuestionCategoryPivot> {
+    return siblings()
   }
 }
 

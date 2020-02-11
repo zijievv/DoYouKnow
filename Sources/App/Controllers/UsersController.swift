@@ -15,6 +15,7 @@ struct UsersController: RouteCollection {
     
     usersRoute.get(use: getAllHandler)
     usersRoute.get(User.parameter, use: getHandler)
+    usersRoute.get(User.parameter, "questions", use: getQuestionsHandler)
     usersRoute.post(User.self, use: createHandler)
   }
   
@@ -31,6 +32,16 @@ struct UsersController: RouteCollection {
   /// Route at `/api/users/<user ID>`.
   func getHandler(_ req: Request) throws -> Future<User> {
     return try req.parameters.next(User.self)
+  }
+  
+  /// Gets user's all questions.
+  ///
+  /// Route at `/api/users/<user ID>/questions`.
+  func getQuestionsHandler(_ req: Request) throws -> Future<[Question]> {
+    return try req.parameters.next(User.self)
+      .flatMap(to: [Question].self) { user in
+        try user.questions.query(on: req).all()
+    }
   }
   
   // MARK: POST & PUT & DELETE requests.

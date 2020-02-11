@@ -59,5 +59,6 @@ public func configure(_ config: inout Config,
   migrations.add(model: User.self, database: .mysql)
   migrations.add(model: Question.self, database: .mysql)
   migrations.add(model: Category.self, database: .mysql)
+  migrations.add(model: QuestionCategoryPivot.self, database: .mysql)
   services.register(migrations)
 }
