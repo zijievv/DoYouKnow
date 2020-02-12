@@ -26,7 +26,7 @@ final class Question: Codable {
   ///   - question: The question.
   ///   - detail: The detail of the question.
   ///   - userID: The user's ID.
-  init(question: String, detail: String, userID: User.ID) {
+  init(question: String, detail: String = "", userID: User.ID) {
     self.question = question
     self.detail = detail
     self.userID = userID
@@ -55,8 +55,15 @@ extension Question: Migration {
   static func prepare(on connection: MySQLConnection) -> Future<Void> {
     // Create the table for `Question` in the database.
     return Database.create(self, on: connection) { builder in
-      // Use `addProperties(to:)` to add all the fields to the database.
-      try addProperties(to: builder)
+      // The `String` type property `detail` should be type `TEXT` in MySQL
+      // database. Cannot use `addProperties(to:)` to add all the fields to
+      // the database, otherwise the field `detail` will be setted up by
+      // default as `VARCHAR`.
+      builder.field(for: \.id, type: .bigint(20), .primaryKey)
+      builder.field(for: \.question, type: .varchar(255))
+      builder.field(for: \.detail, type: .text)
+      builder.field(for: \.userID, type: .varbinary(16))
+      
       // Add a reference between the userID on `Question` and the id property
       // on `User`. This sets up the foreign key constraint between the
       // two tables.

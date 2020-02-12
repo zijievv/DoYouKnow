@@ -8,6 +8,7 @@
 
 import FluentMySQL
 import Vapor
+import Leaf
 
 /// Called before your application initializes.
 public func configure(_ config: inout Config,
@@ -15,6 +16,7 @@ public func configure(_ config: inout Config,
                       _ services: inout Services) throws {
   // Register providers first
   try services.register(FluentMySQLProvider())
+  try services.register(LeafProvider())
 
   // Register routes to the router
   let router = EngineRouter.default()
@@ -58,7 +60,11 @@ public func configure(_ config: inout Config,
   var migrations = MigrationConfig()
   migrations.add(model: User.self, database: .mysql)
   migrations.add(model: Question.self, database: .mysql)
+  migrations.add(model: Answer.self, database: .mysql)
   migrations.add(model: Category.self, database: .mysql)
   migrations.add(model: QuestionCategoryPivot.self, database: .mysql)
   services.register(migrations)
+  
+  // Tells Vapor to use `LeafRenderer` when asked for a `ViewRenderer` type.
+  config.prefer(LeafRenderer.self, for: ViewRenderer.self)
 }

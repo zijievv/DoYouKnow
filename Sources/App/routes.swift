@@ -12,12 +12,12 @@ import Fluent
 /// Register your application's routes here.
 public func routes(_ router: Router) throws {
   // Basic "It works" example
-  router.get { req in
+  router.get("api") { req in
       return "It works!"
   }
   
   // Basic "Hello, world!" example
-  router.get("hello") { req in
+  router.get("api", "hello") { req in
       return "Hello, world!"
   }
 
@@ -29,4 +29,10 @@ public func routes(_ router: Router) throws {
   
   let categoriesController = CategoriesController()
   try router.register(collection: categoriesController)
+  
+  let answerController = AnswersController()
+  try router.register(collection: answerController)
+  
+  let websiteController = WebsiteController()
+  try router.register(collection: websiteController)
 }

@@ -10,6 +10,9 @@ import Vapor
 import Fluent
 
 struct QuestionsController: RouteCollection {
+  /// Registers `Question`'s routes to the incoming router.
+  ///
+  /// - Parameter Router: To register any new routes to.
   func boot(router: Router) throws {
     let questionsRoute = router.grouped("api", "questions")
     

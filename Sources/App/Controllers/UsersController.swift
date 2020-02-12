@@ -10,7 +10,9 @@ import Vapor
 import Fluent
 
 struct UsersController: RouteCollection {
-  /// Required to register the `User`'s routes.
+  /// Registers `User`'s routes to the incoming router.
+  ///
+  /// - Parameter Router: To register any new routes to.
   func boot(router: Router) throws {
     let usersRoute = router.grouped("api", "users")
     

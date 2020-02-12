@@ -42,16 +42,24 @@ extension Answer {
 /// Allows `Answer` to be used as a dynamis migration.
 extension Answer: Migration {
   static func prepare(on connection: MySQLConnection) -> Future<Void> {
-    // Create the table for `Question` in the database.
+    // Create the table for `Answer` in the database.
     return Database.create(self, on: connection) { builder in
-      // Use `addProperties(to:)` to add all the fields to the database.
-      try addProperties(to: builder)
+      // The `String` type property `answer` should be type `TEXT` in MySQL
+      // database. Cannot use `addProperties(to:)` to add all the fields to
+      // the database, otherwise the field `answer` will be setted up by
+      // default as `VARCHAR`.
+      builder.field(for: \.id, type: .bigint(20), .primaryKey)
+      builder.field(for: \.answer, type: .text)
+      builder.field(for: \Answer.userID, type: .varbinary(16))
+      builder.field(for: \Answer.questionID, type: .bigint(20))
+      
       // Add a reference between the userID on `Answer` and the id property
       // on `User`. This sets up the foreign key constraint between the
       // two tables.
       builder.reference(from: \.userID, to: \User.id)
       // Same as above.
       builder.reference(from: \.questionID, to: \Question.id)
+      
     }
   }
 }

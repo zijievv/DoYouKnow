@@ -9,6 +9,9 @@
 import Vapor
 
 struct CategoriesController: RouteCollection {
+  /// Registers `Category`'s routes to the incoming router.
+  ///
+  /// - Parameter Router: To register any new routes to.
   func boot(router: Router) throws {
     let categoriesRoute = router.grouped("api", "categories")
     
