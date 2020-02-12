@@ -21,6 +21,8 @@ struct UsersController: RouteCollection {
     usersRoute.get(User.parameter, use: getHandler)
     usersRoute.get("search", use: searchHandler)
     usersRoute.post(User.self, use: createHandler)
+    usersRoute.put(User.parameter, use: updateHandler)
+    usersRoute.delete(User.parameter, use: deleteHandler)
     // About Question, Answer.
     usersRoute.get(User.parameter, "questions", use: getQuestionsHandler)
     usersRoute.get(User.parameter, "answers", use: getAnswersHandler)
@@ -69,6 +71,32 @@ struct UsersController: RouteCollection {
   ///   - user: The created user saved in the database.
   func createHandler(_ req: Request, user: User) throws -> Future<User> {
     return user.save(on: req)
+  }
+  
+  /// Updates a user with specified ID
+  ///
+  /// Route at `/api/users/<user ID>`.
+  func updateHandler(_ req: Request) throws -> Future<User> {
+    return try flatMap(
+      to: User.self,
+      req.parameters.next(User.self),
+      req.content.decode(User.self)) { user, updatedUser in
+        user.name = updatedUser.name
+        user.username = updatedUser.username
+        return user.save(on: req)
+    }
+  }
+  
+  /// Deletes a user with specified ID.
+  ///
+  /// Route at `/api/users/<user ID>`.
+  ///
+  /// - Returns: The `HTTPStatus` once the user is deleted.
+  func deleteHandler(_ req: Request) throws -> Future<HTTPStatus> {
+    return try req.parameters
+      .next(User.self)
+      .delete(on: req)
+      .transform(to: .noContent)
   }
   
   // MARK:- About `Question`, `Answer`.
