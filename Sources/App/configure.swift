@@ -27,7 +27,7 @@ public func configure(_ config: inout Config,
   // Create _empty_ middleware config
   var middlewares = MiddlewareConfig()
   // Serves files from `Public/` directory
-  // middlewares.use(FileMiddleware.self)
+  middlewares.use(FileMiddleware.self)
   // Catches errors and converts to HTTP response
   middlewares.use(ErrorMiddleware.self)
   services.register(middlewares)
@@ -48,6 +48,7 @@ public func configure(_ config: inout Config,
   // --env MYSQL_PASSWORD=password \
   // --env MYSQL_DATABASE=vapor \
   // -p 3306:3306 \
+  //
   //
   // IF TEST:
   // mysql/mysql-server:5.7

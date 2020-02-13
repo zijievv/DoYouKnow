@@ -163,7 +163,7 @@ struct QuestionsController: RouteCollection {
     return try flatMap(
       to: HTTPStatus.self,
       req.parameters.next(Question.self),
-      req.content.decode(Category.self)) {
+      req.parameters.next(Category.self)) {
         question, category in
         return question.categories
           // Use `attach(to:on:)` to set up the relationship between
