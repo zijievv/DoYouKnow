@@ -1,0 +1,33 @@
+#set("content") {
+<h1>#(title)</h1>
+
+<form method="post">
+  <div class="form-group">
+    <label for="question">Acronym</label>
+    <input type="text" name="question" class="form-control" id="question" />
+  </div>
+  
+  <div class="form-group">
+    <label for="detail">Description</label>
+    <textarea name="detail" class="form-control" id="detail" rows="7" cols="42">
+    </textarea>
+  </div>
+  
+  <div class="form-group">
+    <label form="userID">User</label>
+    <select name="userID" class="form-control" id="userID">
+      #for(user in users) {
+      <option value="#(user.id)">
+        #(user.name)
+      </option>
+      }
+    </select>
+  </div>
+  
+  <button type="submit" class="btn btn-primary">
+    Submit
+  </button>
+</form>
+}
+
+#embed("base")

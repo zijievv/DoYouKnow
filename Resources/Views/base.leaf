@@ -31,6 +31,12 @@
           <li class="nav-item #if(title == "All Categories"){active}">
             <a href="/categories" class="nav-link">All Categories</a>
           </li>
+          
+          <li class="nav-item #if(title == "Create A Question"){active}">
+            <a href="/questions/create" class="nav-link">
+              Create A Question
+            </a>
+          </li>
         </ul>
       </div>
     </nav>

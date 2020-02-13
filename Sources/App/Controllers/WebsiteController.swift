@@ -22,6 +22,10 @@ struct WebsiteController: RouteCollection {
     router.get("users", use: allUsersHandler)
     router.get("categories", use: allCategoriesHandler)
     router.get("categories", Category.parameter, use: categoryHandler)
+    router.get("questions", "create", use: createQuestionHandler)
+    router.post(Question.self,
+                at: "questions", "create",
+                use: createQuestionPostHandler)
   }
   
   /// Gets rendered index page `View`.
@@ -129,6 +133,24 @@ struct WebsiteController: RouteCollection {
         return try req.view().render("category", context)
     }
   }
+  
+  func createQuestionHandler(_ req: Request) throws -> Future<View> {
+    let context = CreateQuestionContext(users: User.query(on: req).all())
+    return try req.view().render("createQuestion", context)
+  }
+  
+  func createQuestionPostHandler(
+    _ req: Request,
+    question: Question
+  ) throws -> Future<Response> {
+    return question.save(on: req).map(to: Response.self) {
+      question in
+      guard let id = question.id else {
+        throw Abort(.internalServerError)
+      }
+      return req.redirect(to: "/questions/\(id)")
+    }
+  }
 }
 
 /// Context for index page.
@@ -173,4 +195,9 @@ struct CategoryContext: Encodable {
   let title: String
   let category: Category
   let questions: Future<[Question]>
+}
+
+struct CreateQuestionContext: Encodable {
+  let title = "Create A Question"
+  let users: Future<[User]>
 }
