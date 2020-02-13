@@ -6,31 +6,7 @@
 <hr />
 <!--<p>&nbsp;</p>-->
 
-#if(questions) {
-<table class="table table-bordered table-hover">
-  <thead class="thead-light">
-    <tr>
-      <th><h1>My Questions</h1></th>
-    </tr>
-  </thead>
-  <tbody>
-    #for(question in questions) {
-    <tr>
-      <td>
-        <article>
-          <h2>
-            <a href="/questions/#(question.id)">#(question.question)</a>
-          </h2>
-          <p>#(question.detail)</h2>
-        </article>
-      </td>
-    </tr>
-    }
-  </tbody>
-</table>
-} else {
-<h2>There aren't any questions yet!</h2>
-}
+#embed("questionsTable")
 }
 
 #embed("base")

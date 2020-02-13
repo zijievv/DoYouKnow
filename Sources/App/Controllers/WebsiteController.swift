@@ -20,6 +20,8 @@ struct WebsiteController: RouteCollection {
     router.get("questions", Question.parameter, use: questionHandler)
     router.get("users", User.parameter, use: userHandler)
     router.get("users", use: allUsersHandler)
+    router.get("categories", use: allCategoriesHandler)
+    router.get("categories", Category.parameter, use: categoryHandler)
   }
   
   /// Gets rendered index page `View`.
@@ -29,9 +31,8 @@ struct WebsiteController: RouteCollection {
   func indexHandler(_ req: Request) throws -> Future<View> {
     return Question.query(on: req).all()
       .flatMap(to: View.self) { questions in
-        let questionsData = questions.isEmpty ? nil : questions
         let context = IndexContext(title: "Home page",
-                                   questions: questionsData)
+                                   questions: questions)
         return try req.view().render("index", context)
     }
   }
@@ -110,12 +111,30 @@ struct WebsiteController: RouteCollection {
         return try req.view().render("allUsers", context)
     }
   }
+  
+  func allCategoriesHandler(_ req: Request) throws -> Future<View> {
+    let categories = Category.query(on: req).all()
+    let context = AllCategoriesContext(categories: categories)
+    
+    return try req.view().render("allCategories", context)
+  }
+  
+  func categoryHandler(_ req: Request) throws -> Future<View> {
+    return try req.parameters.next(Category.self)
+      .flatMap(to: View.self) { category in
+        let questions = try category.questions.query(on: req).all()
+        let context = CategoryContext(title: category.name,
+                                      category: category,
+                                      questions: questions)
+        return try req.view().render("category", context)
+    }
+  }
 }
 
 /// Context for index page.
 struct IndexContext: Encodable {
   let title: String
-  let questions: [Question]?
+  let questions: [Question]
 }
 
 /// Context for question detail page.
@@ -142,4 +161,16 @@ struct UserContext: Encodable {
 struct AllUsersContext: Encodable {
   let title: String
   let users: [User]
+}
+
+/// Context for all categories page.
+struct AllCategoriesContext: Encodable {
+  let title = "All Categories"
+  let categories: Future<[Category]>
+}
+
+struct CategoryContext: Encodable {
+  let title: String
+  let category: Category
+  let questions: Future<[Question]>
 }
