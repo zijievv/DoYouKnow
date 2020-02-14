@@ -26,6 +26,10 @@ struct WebsiteController: RouteCollection {
     router.post(Question.self,
                 at: "questions", "create",
                 use: createQuestionPostHandler)
+    router.get("questions", Question.parameter, "edit",
+               use: editQuestionHandler)
+    router.post("questions", Question.parameter, "edit",
+                use: editQuestionPostHandler)
   }
   
   /// Gets rendered index page `View`.
@@ -151,6 +155,33 @@ struct WebsiteController: RouteCollection {
       return req.redirect(to: "/questions/\(id)")
     }
   }
+  
+  func editQuestionHandler(_ req: Request) throws -> Future<View> {
+    return try req.parameters.next(Question.self)
+      .flatMap(to: View.self) { question in
+        let context = EditQuestionContext(question: question,
+                                          users: User.query(on: req).all())
+        return try req.view().render("createQuestion", context)
+    }
+  }
+  
+  func editQuestionPostHandler(_ req: Request) throws -> Future<Response> {
+    return try flatMap(
+      to: Response.self,
+      req.parameters.next(Question.self),
+      req.content.decode(Question.self)) { question, data in
+        question.question = data.question
+        question.detail = data.detail
+        question.userID = data.userID
+        
+        guard let id = question.id else {
+          throw Abort(.internalServerError)
+        }
+        
+        let redirect = req.redirect(to: "/questions/\(id)")
+        return question.save(on: req).transform(to: redirect)
+    }
+  }
 }
 
 /// Context for index page.
@@ -200,4 +231,11 @@ struct CategoryContext: Encodable {
 struct CreateQuestionContext: Encodable {
   let title = "Create A Question"
   let users: Future<[User]>
+}
+
+struct EditQuestionContext: Encodable {
+  let title = "Edit Question"
+  let question: Question
+  let users: Future<[User]>
+  let editing = true
 }

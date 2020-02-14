@@ -18,6 +18,9 @@
 <!--#for(user in usersOfAnswers) {-->
 <!--<p>#(user.name)</p>-->
 <!--}-->
+<a class="btn btn-primary" href="/questions/#(question.id)/edit" role="button">
+  Edit
+</a>
 }
 
 #embed("base")
