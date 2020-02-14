@@ -8,6 +8,18 @@
     <a href="/users/#(userOfQuestion.id)">#(userOfQuestion.name)</a>
   </i>
 </footer>
+#if(count(categories) > 0) {
+<h2>Categories</h2>
+<ul>
+  #for(category in categories) {
+  <li>
+    <a href="/categories/#(category.id)">
+      #(category.name)
+    </a>
+  </li>
+  }
+</ul>
+}
 <!--<p>&nbsp;</p>-->
 <!--#for(answer in answers) {-->
 <!--<article class="forecast">-->

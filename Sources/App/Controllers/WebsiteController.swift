@@ -95,7 +95,11 @@ struct WebsiteController: RouteCollection {
       .flatMap(to: View.self) { question in
         return question.user.get(on: req)
           .flatMap(to: View.self) { userOfQuestion in
-            let context = QuestionContext(title: question.question, question: question, userOfQuestion: userOfQuestion)
+            let categories = try question.categories.query(on: req).all()
+            let context = QuestionContext(title: question.question,
+                                          question: question,
+                                          userOfQuestion: userOfQuestion,
+                                          categories: categories)
             return try req.view().render("question", context)
         }
     }
@@ -231,6 +235,7 @@ struct QuestionContext: Encodable {
   let question: Question
   /// The user owning the question.
   let userOfQuestion: User
+  let categories: Future<[Category]>
 }
 
 /// Context for user page.
