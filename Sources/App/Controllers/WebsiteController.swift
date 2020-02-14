@@ -190,8 +190,11 @@ struct WebsiteController: RouteCollection {
   func editQuestionHandler(_ req: Request) throws -> Future<View> {
     return try req.parameters.next(Question.self)
       .flatMap(to: View.self) { question in
+        let users = User.query(on: req).all()
+        let categories = try question.categories.query(on: req).all()
         let context = EditQuestionContext(question: question,
-                                          users: User.query(on: req).all())
+                                          users: users,
+                                          categories: categories)
         return try req.view().render("createQuestion", context)
     }
   }
@@ -200,7 +203,7 @@ struct WebsiteController: RouteCollection {
     return try flatMap(
       to: Response.self,
       req.parameters.next(Question.self),
-      req.content.decode(Question.self)) { question, data in
+      req.content.decode(CreateQuestionData.self)) { question, data in
         question.question = data.question
         question.detail = data.detail
         question.userID = data.userID
@@ -209,9 +212,72 @@ struct WebsiteController: RouteCollection {
           throw Abort(.internalServerError)
         }
         
-        let redirect = req.redirect(to: "/questions/\(id)")
-        return question.save(on: req).transform(to: redirect)
+        return question.save(on: req)
+          .flatMap(to: [Category].self) { _ in
+            try question.categories.query(on: req).all()
+        }.flatMap(to: Response.self) { existingCategories in
+          // Stores categories' names.
+          let existingStringArray = existingCategories.map { $0.name }
+          
+          // Stores the categories
+          let existingSet = Set<String>(existingStringArray)
+          // For categories supplied with the request.
+          let newSet = Set<String>(data.categories ?? [])
+          
+          // Calculate the categories to add to the question and the
+          // categories to remove.
+          let categoriesToAdd = newSet.subtracting(existingSet)
+          let categoriesToRemove = existingSet.subtracting(newSet)
+          
+          // Create an array of category operation results.
+          var categoryResults: [Future<Void>] = []
+          
+          // Loop through all the categories to add and call
+          // `Category.addCategory(_:to:on:)` to set up the relationship.
+          // Add each result to the results array.
+          for newCategory in categoriesToAdd {
+            categoryResults.append(try Category.addCategory(newCategory,
+                                                            to: question,
+                                                            on: req))
+          }
+          
+          // Loop through all the category names to remove from the question.
+          for categoryNameToRemove in categoriesToRemove {
+            // Gets the `Category` object from the name of the category to
+            // remove.
+            let categoryToRemove = existingCategories.first {
+              $0.name == categoryNameToRemove
+            }
+            
+            // If the `Category` object exists, use `detach(_:on:)` to
+            // remove the relationship and delete the pivot.
+            if let category = categoryToRemove {
+              categoryResults.append(question.categories.detach(category,
+                                                                on: req))
+            }
+          }
+          
+          let redirect = req.redirect(to: "/questions/\(id)")
+          // Flatten all the future category results. Transform the result
+          // to redirect to the updated question's page.
+          return categoryResults.flatten(on: req).transform(to: redirect)
+        }
     }
+//    return try flatMap(
+//      to: Response.self,
+//      req.parameters.next(Question.self),
+//      req.content.decode(Question.self)) { question, data in
+//        question.question = data.question
+//        question.detail = data.detail
+//        question.userID = data.userID
+//
+//        guard let id = question.id else {
+//          throw Abort(.internalServerError)
+//        }
+//
+//        let redirect = req.redirect(to: "/questions/\(id)")
+//        return question.save(on: req).transform(to: redirect)
+//    }
   }
   
   func deleteQuestionHandler(_ req: Request) throws -> Future<Response> {
@@ -284,4 +350,5 @@ struct EditQuestionContext: Encodable {
   let question: Question
   let users: Future<[User]>
   let editing = true
+  let categories: Future<[Category]>
 }
