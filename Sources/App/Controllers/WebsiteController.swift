@@ -30,6 +30,8 @@ struct WebsiteController: RouteCollection {
                use: editQuestionHandler)
     router.post("questions", Question.parameter, "edit",
                 use: editQuestionPostHandler)
+    router.post("questions", Question.parameter, "delete",
+                use: deleteQuestionHandler)
   }
   
   /// Gets rendered index page `View`.
@@ -181,6 +183,12 @@ struct WebsiteController: RouteCollection {
         let redirect = req.redirect(to: "/questions/\(id)")
         return question.save(on: req).transform(to: redirect)
     }
+  }
+  
+  func deleteQuestionHandler(_ req: Request) throws -> Future<Response> {
+    return try req.parameters.next(Question.self)
+      .delete(on: req)
+      .transform(to: req.redirect(to: "/"))
   }
 }
 

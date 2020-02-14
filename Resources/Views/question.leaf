@@ -18,9 +18,12 @@
 <!--#for(user in usersOfAnswers) {-->
 <!--<p>#(user.name)</p>-->
 <!--}-->
-<a class="btn btn-primary" href="/questions/#(question.id)/edit" role="button">
-  Edit
-</a>
+<form method="post" action="/questions/#(question.id)/delete">
+  <a class="btn btn-primary" href="/questions/#(question.id)/edit" role="button">
+    Edit
+  </a>&nbsp;
+  <input class="btn btn-danger" type="submit" value="Delete" />
+</form>
 }
 
 #embed("base")
