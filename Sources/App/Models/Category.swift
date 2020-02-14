@@ -26,6 +26,39 @@ extension Category {
   var questions: Siblings<Category, Question, QuestionCategoryPivot> {
     return siblings()
   }
+  
+  /// Adds a new category from a creating or editing question request.
+  ///
+  /// If the created category from the request already exists, just sends
+  /// back to the request, won't creates again.
+  ///
+  /// - Parameters:
+  ///   - name: The category's name.
+  ///   - question: The created or edited question.
+  ///   - req: The request.
+  static func addCategory(
+    _ name: String,
+    to question: Question,
+    on req: Request
+  ) throws -> Future<Void> {
+    return Category.query(on: req)
+      .filter(\.name == name).first()
+      .flatMap(to: Void.self) { foundCategory in
+        if let exisitingCatgory = foundCategory {
+          return question.categories
+            .attach(exisitingCatgory, on: req)
+            .transform(to: ())
+        } else {
+          let category = Category(name: name)
+          return category.save(on: req)
+            .flatMap(to: Void.self) { savedCategory in
+              return question.categories
+                .attach(savedCategory, on: req)
+                .transform(to: ())
+          }
+        }
+    }
+  }
 }
 
 /// Allows `Category` to be used as a dynamis migration.

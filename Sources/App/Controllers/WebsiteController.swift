@@ -23,7 +23,7 @@ struct WebsiteController: RouteCollection {
     router.get("categories", use: allCategoriesHandler)
     router.get("categories", Category.parameter, use: categoryHandler)
     router.get("questions", "create", use: createQuestionHandler)
-    router.post(Question.self,
+    router.post(CreateQuestionData.self,
                 at: "questions", "create",
                 use: createQuestionPostHandler)
     router.get("questions", Question.parameter, "edit",
@@ -147,16 +147,41 @@ struct WebsiteController: RouteCollection {
   
   func createQuestionPostHandler(
     _ req: Request,
-    question: Question
+    data: CreateQuestionData
   ) throws -> Future<Response> {
-    return question.save(on: req).map(to: Response.self) {
-      question in
-      guard let id = question.id else {
-        throw Abort(.internalServerError)
-      }
-      return req.redirect(to: "/questions/\(id)")
+    let question = Question(question: data.question,
+                            detail: data.detail,
+                            userID: data.userID)
+    return question.save(on: req)
+      .flatMap(to: Response.self) { question in
+        guard let id = question.id else {
+          throw Abort(.internalServerError)
+        }
+        
+        var categorySaves: [Future<Void>] = []
+        
+        for category in data.categories ?? [] {
+          try categorySaves.append(Category.addCategory(category,
+                                                        to: question,
+                                                        on: req))
+        }
+        
+        let redirect = req.redirect(to: "/questions/\(id)")
+        return categorySaves.flatten(on: req).transform(to: redirect)
     }
   }
+//  func createQuestionPostHandler(
+//    _ req: Request,
+//    question: Question
+//  ) throws -> Future<Response> {
+//    return question.save(on: req).map(to: Response.self) {
+//      question in
+//      guard let id = question.id else {
+//        throw Abort(.internalServerError)
+//      }
+//      return req.redirect(to: "/questions/\(id)")
+//    }
+//  }
   
   func editQuestionHandler(_ req: Request) throws -> Future<View> {
     return try req.parameters.next(Question.self)
@@ -234,6 +259,14 @@ struct CategoryContext: Encodable {
   let title: String
   let category: Category
   let questions: Future<[Question]>
+}
+
+/// Stores the required data when cerating or editing a question.
+struct CreateQuestionData: Content {
+  let userID: User.ID
+  let question: String
+  let detail: String
+  let categories: [String]?
 }
 
 struct CreateQuestionContext: Encodable {
