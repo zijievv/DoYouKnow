@@ -22,39 +22,44 @@ struct QuestionsController: RouteCollection {
     questionsRoute.get(Question.parameter, use: getHandler)
     questionsRoute.get("first", use: getFirstHandler)
     questionsRoute.get("sorted", use: sortedHandler)
-//    questionsRoute.post(Question.self, use: createHandler)
-    questionsRoute.put(Question.parameter, use: updateHandler)
-    questionsRoute.delete(Question.parameter, use: deleteHandler)
     // About User, Answer.
     questionsRoute.get(Question.parameter, "user", use: getUserHandler)
     questionsRoute.get(Question.parameter, "answers", use: getAnswersHandler)
     // About Category.
     questionsRoute.get(Question.parameter, "categories",
                        use: getCategoriesHandler)
-    questionsRoute.post(Question.parameter,
-                        "categories",
-                        Category.parameter,
-                        use: addCategoriesHandler)
-    questionsRoute.delete(Question.parameter,
-                          "categories",
-                          Category.parameter,
-                          use: removeCategoriesHandler)
     
-    // Instantiate a basic authentication middleware which uses
-    // `BCryptDigest` to verify passwords. Since `User` conforms to
-    // `BasicAuthenticatable`, this is a vailable as a static function on
-    // the model.
-    let basicAuthMiddleware = User.basicAuthMiddleware(using: BCryptDigest())
-    // Create an instance of `GuardAuthenticationMiddleware` which ensures
-    // that requests contain valid authorization.
+//    // Instantiate a basic authentication middleware which uses
+//    // `BCryptDigest` to verify passwords. Since `User` conforms to
+//    // `BasicAuthenticatable`, this is a vailable as a static function on
+//    // the model.
+//    let basicAuthMiddleware = User.basicAuthMiddleware(
+//      using: BCryptDigest())
+//    // Create an instance of `GuardAuthenticationMiddleware` which ensures
+//    // that requests contain valid authorization.
+//    let guardAuthMiddleware = User.guardAuthMiddleware()
+//    // Create a middleware group which uses `basicAuthMiddleware` and
+//    // `guardAuthMiddleware`.
+//    let protected = questionsRoute.grouped(basicAuthMiddleware,
+//                                           guardAuthMiddleware)
+//    // Connect the *create question* path to `createHandler(_:question:)`
+//    // through this middleware group.
+//    protected.post(Question.self, use: createHandler)
+    let tokenAuthMiddleware = User.tokenAuthMiddleware()
     let guardAuthMiddleware = User.guardAuthMiddleware()
-    // Create a middleware group which uses `basicAuthMiddleware` and
-    // `guardAuthMiddleware`.
-    let protected = questionsRoute.grouped(basicAuthMiddleware,
-                                           guardAuthMiddleware)
-    // Connect the *create question* path to `createHandler(_:question:)`
-    // through this middleware group.
-    protected.post(Question.self, use: createHandler)
+    let tokenAuthGroup = questionsRoute.grouped(tokenAuthMiddleware,
+                                                guardAuthMiddleware)
+    // About Question.
+    tokenAuthGroup.post(QuestionCreateData.self, use: createHandler)
+    tokenAuthGroup.put(Question.parameter, use: updateHandler)
+    tokenAuthGroup.delete(Question.parameter, use: deleteHandler)
+    // About Category.
+    tokenAuthGroup.post(
+      Question.parameter, "categories", Category.parameter,
+      use: addCategoriesHandler)
+    tokenAuthGroup.delete(
+      Question.parameter, "categories", Category.parameter,
+      use: removeCategoriesHandler)
   }
   
   // MARK:- About `Question`.
@@ -95,7 +100,11 @@ struct QuestionsController: RouteCollection {
   ///
   /// - Returns: The question once it's saved.
   func createHandler(_ req: Request,
-                     question: Question) throws -> Future<Question> {
+                     data: QuestionCreateData) throws -> Future<Question> {
+    let user = try req.requireAuthenticated(User.self)
+    let question = try Question(question: data.question,
+                                detail: data.detail,
+                                userID: user.requireID())
     return question.save(on: req)
 //    // Decode the request's JSON into an `Question` model using `Codable`.
 //    return try req.content.decode(Question.self)
@@ -117,10 +126,14 @@ struct QuestionsController: RouteCollection {
     return try flatMap(
       to: Question.self,
       req.parameters.next(Question.self),
-      req.content.decode(Question.self)) {
-        question, updatedQuestion in
-        question.question = updatedQuestion.question
-        question.detail = updatedQuestion.detail
+      req.content.decode(QuestionCreateData.self)) {
+        question, updatedData in
+        question.question = updatedData.question
+        question.detail = updatedData.detail
+        
+        let user = try req.requireAuthenticated(User.self)
+        question.userID = try user.requireID()
+        
         return question.save(on: req)
     }
   }
@@ -211,4 +224,11 @@ struct QuestionsController: RouteCollection {
           .transform(to: .noContent)
     }
   }
+}
+
+/// Defines the request data that a user now has to send to create a
+/// question.
+struct QuestionCreateData: Content {
+  let question: String
+  let detail: String
 }

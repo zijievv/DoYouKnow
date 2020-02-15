@@ -18,12 +18,18 @@ struct CategoriesController: RouteCollection {
     // About Category.
     categoriesRoute.get(use: getAllHandler)
     categoriesRoute.get(Category.parameter, use: getHandler)
-    categoriesRoute.post(Category.self, use: createHandler)
+//    categoriesRoute.post(Category.self, use: createHandler)
     categoriesRoute.put(Category.parameter, use: updateHandler)
     categoriesRoute.delete(Category.parameter, use: deleteHandler)
     // About Question.
     categoriesRoute.get(Category.parameter, "questions",
                         use: getQuestionsHandler)
+    
+    let tokenAuthMiddleware = User.tokenAuthMiddleware()
+    let guardAuthMiddleware = User.guardAuthMiddleware()
+    let tokenAuthGroup = categoriesRoute.grouped(tokenAuthMiddleware,
+                                                 guardAuthMiddleware)
+    tokenAuthGroup.post(Category.self, use: createHandler)
   }
   
   // MARK:- About `Category`.

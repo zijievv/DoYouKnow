@@ -99,3 +99,9 @@ extension User: BasicAuthenticatable {
   /// Tells Vapor which key path of `User` is the password.
   static var passwordKey: PasswordKey = \User.password
 }
+
+/// Allows a token to authenticate a user.
+extension User: TokenAuthenticatable {
+  /// Tells Vapor what a token is.
+  typealias TokenType = Token
+}

@@ -21,12 +21,22 @@ struct UsersController: RouteCollection {
     usersRoute.get(use: getAllHandler)
     usersRoute.get(User.parameter, use: getHandler)
     usersRoute.get("search", use: searchHandler)
-    usersRoute.post(User.self, use: createHandler)
+//    usersRoute.post(User.self, use: createHandler)
     usersRoute.put(User.parameter, use: updateHandler)
     usersRoute.delete(User.parameter, use: deleteHandler)
     // About Question, Answer.
     usersRoute.get(User.parameter, "questions", use: getQuestionsHandler)
     usersRoute.get(User.parameter, "answers", use: getAnswersHandler)
+    
+    let basicAuthMiddleware = User.basicAuthMiddleware(using: BCryptDigest())
+    let basicAuthGroup = usersRoute.grouped(basicAuthMiddleware)
+    basicAuthGroup.post("login", use: loginHandler)
+    
+    let tokenAuthMiddleware = User.tokenAuthMiddleware()
+    let guardAuthMiddleware = User.guardAuthMiddleware()
+    let tokenAuthGroup = usersRoute.grouped(tokenAuthMiddleware,
+                                            guardAuthMiddleware)
+    tokenAuthGroup.post(User.self, use: createHandler)
   }
   
   // MARK:- About `User`.
@@ -124,5 +134,17 @@ struct UsersController: RouteCollection {
       .flatMap(to: [Answer].self) { user in
         try user.answers.query(on: req).all()
     }
+  }
+  
+  /// A handler for logging a user in and gets a token.
+  ///
+  /// Route at `/api/users/login/`.
+  func loginHandler(_ req: Request) throws -> Future<Token> {
+    // Gets the authenticated user from the request.
+    // This saves the user's identity in the request's authentication cache,
+    // allowing to retrieve the user object later.
+    let user = try req.requireAuthenticated(User.self)
+    let token = try Token.generate(for: user)
+    return token.save(on: req)
   }
 }
