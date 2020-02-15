@@ -8,6 +8,7 @@
 
 import Vapor
 import Fluent
+import Authentication
 
 struct QuestionsController: RouteCollection {
   /// Registers `Question`'s routes to the incoming router.
@@ -21,7 +22,7 @@ struct QuestionsController: RouteCollection {
     questionsRoute.get(Question.parameter, use: getHandler)
     questionsRoute.get("first", use: getFirstHandler)
     questionsRoute.get("sorted", use: sortedHandler)
-    questionsRoute.post(Question.self, use: createHandler)
+//    questionsRoute.post(Question.self, use: createHandler)
     questionsRoute.put(Question.parameter, use: updateHandler)
     questionsRoute.delete(Question.parameter, use: deleteHandler)
     // About User, Answer.
@@ -29,7 +30,7 @@ struct QuestionsController: RouteCollection {
     questionsRoute.get(Question.parameter, "answers", use: getAnswersHandler)
     // About Category.
     questionsRoute.get(Question.parameter, "categories",
-                        use: getCategoriesHandler)
+                       use: getCategoriesHandler)
     questionsRoute.post(Question.parameter,
                         "categories",
                         Category.parameter,
@@ -38,6 +39,22 @@ struct QuestionsController: RouteCollection {
                           "categories",
                           Category.parameter,
                           use: removeCategoriesHandler)
+    
+    // Instantiate a basic authentication middleware which uses
+    // `BCryptDigest` to verify passwords. Since `User` conforms to
+    // `BasicAuthenticatable`, this is a vailable as a static function on
+    // the model.
+    let basicAuthMiddleware = User.basicAuthMiddleware(using: BCryptDigest())
+    // Create an instance of `GuardAuthenticationMiddleware` which ensures
+    // that requests contain valid authorization.
+    let guardAuthMiddleware = User.guardAuthMiddleware()
+    // Create a middleware group which uses `basicAuthMiddleware` and
+    // `guardAuthMiddleware`.
+    let protected = questionsRoute.grouped(basicAuthMiddleware,
+                                           guardAuthMiddleware)
+    // Connect the *create question* path to `createHandler(_:question:)`
+    // through this middleware group.
+    protected.post(Question.self, use: createHandler)
   }
   
   // MARK:- About `Question`.

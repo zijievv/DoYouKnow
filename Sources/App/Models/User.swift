@@ -9,6 +9,7 @@
 import Foundation
 import Vapor
 import FluentMySQL
+import Authentication
 
 final class User: Codable {
   /// The ID of the model assigned by the database when it's saved.
@@ -84,9 +85,17 @@ extension User {
 }
 
 extension Future where T: User {
+  /// Appears user's non-private data.
   func convertToPublic() -> Future<User.Public> {
     return self.map(to: User.Public.self) { user in
       return user.convertToPublic()
     }
   }
+}
+
+extension User: BasicAuthenticatable {
+  /// Tells Vapor which key path of `User` is the username.
+  static var usernameKey: UsernameKey = \User.username
+  /// Tells Vapor which key path of `User` is the password.
+  static var passwordKey: PasswordKey = \User.password
 }
