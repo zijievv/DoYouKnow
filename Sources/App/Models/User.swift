@@ -105,3 +105,23 @@ extension User: TokenAuthenticatable {
   /// Tells Vapor what a token is.
   typealias TokenType = Token
 }
+
+struct AdminUser: Migration {
+  typealias Database = MySQLDatabase
+  
+  static func prepare(on connection: MySQLConnection) -> Future<Void> {
+    let password = try? BCrypt.hash("adminpassword")
+    guard let hashedPassword = password else {
+      fatalError("Failed to create admin user")
+    }
+    
+    let user = User(name: "Admin",
+                    username: "admin",
+                    password: hashedPassword)
+    return user.save(on: connection).transform(to: ())
+  }
+  
+  static func revert(on connection: MySQLConnection) -> Future<Void> {
+    return .done(on: connection)
+  }
+}
