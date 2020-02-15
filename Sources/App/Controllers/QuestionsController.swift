@@ -124,10 +124,10 @@ struct QuestionsController: RouteCollection {
   /// Gets the user owning the question.
   ///
   /// Route at `/api/questions/<question ID>/user`.
-  func getUserHandler(_ req: Request) throws -> Future<User> {
+  func getUserHandler(_ req: Request) throws -> Future<User.Public> {
     return try req.parameters.next(Question.self)
-      .flatMap(to: User.self) { question in
-        question.user.get(on: req)
+      .flatMap(to: User.Public.self) { question in
+        question.user.get(on: req).convertToPublic()
     }
   }
   

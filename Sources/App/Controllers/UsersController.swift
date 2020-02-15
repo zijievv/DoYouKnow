@@ -8,6 +8,7 @@
 
 import Vapor
 import Fluent
+import Crypto
 
 struct UsersController: RouteCollection {
   /// Registers `User`'s routes to the incoming router.
@@ -32,15 +33,15 @@ struct UsersController: RouteCollection {
   /// Gets all users
   ///
   /// Route at `/api/users/`.
-  func getAllHandler(_ req: Request) throws -> Future<[User]> {
-    return User.query(on: req).all()
+  func getAllHandler(_ req: Request) throws -> Future<[User.Public]> {
+    return User.query(on: req).decode(data: User.Public.self).all()
   }
   
   /// Gets a user with the specified ID.
   ///
   /// Route at `/api/users/<user ID>`.
-  func getHandler(_ req: Request) throws -> Future<User> {
-    return try req.parameters.next(User.self)
+  func getHandler(_ req: Request) throws -> Future<User.Public> {
+    return try req.parameters.next(User.self).convertToPublic()
   }
   
   /// Searches all users matched the term.
@@ -51,7 +52,7 @@ struct UsersController: RouteCollection {
   /// ```ascii
   /// http://localhost:8080/api/answer/search?term=Tim
   /// ```
-  func searchHandler(_ req: Request) throws -> Future<[User]> {
+  func searchHandler(_ req: Request) throws -> Future<[User.Public]> {
     guard let searchTerm = req.query[String.self, at: "term"] else {
       throw Abort(.badRequest)
     }
@@ -59,7 +60,7 @@ struct UsersController: RouteCollection {
     return User.query(on: req).group(.or) { or in
       or.filter(\.username == searchTerm)
       or.filter(\.name == searchTerm)
-    }.all()
+    }.decode(data: User.Public.self).all()
   }
   
   /// Creates a new user.
@@ -69,21 +70,26 @@ struct UsersController: RouteCollection {
   /// - parameters:
   ///   - req: The request.
   ///   - user: The created user saved in the database.
-  func createHandler(_ req: Request, user: User) throws -> Future<User> {
-    return user.save(on: req)
+  func createHandler(
+    _ req: Request,
+    user: User
+  ) throws -> Future<User.Public> {
+    // Hashes the user's password before saving it.
+    user.password = try BCrypt.hash(user.password)
+    return user.save(on: req).convertToPublic()
   }
   
   /// Updates a user with specified ID
   ///
   /// Route at `/api/users/<user ID>`.
-  func updateHandler(_ req: Request) throws -> Future<User> {
+  func updateHandler(_ req: Request) throws -> Future<User.Public> {
     return try flatMap(
-      to: User.self,
+      to: User.Public.self,
       req.parameters.next(User.self),
       req.content.decode(User.self)) { user, updatedUser in
         user.name = updatedUser.name
         user.username = updatedUser.username
-        return user.save(on: req)
+        return user.save(on: req).convertToPublic()
     }
   }
   
