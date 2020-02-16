@@ -17,24 +17,34 @@ struct WebsiteController: RouteCollection {
   ///
   /// - Parameter router: To register any new routes to.
   func boot(router: Router) throws {
-    router.get(use: indexHandler)
-    router.get("questions", Question.parameter, use: questionHandler)
-    router.get("users", User.parameter, use: userHandler)
-    router.get("users", use: allUsersHandler)
-    router.get("categories", use: allCategoriesHandler)
-    router.get("categories", Category.parameter, use: categoryHandler)
-    router.get("questions", "create", use: createQuestionHandler)
-    router.post(CreateQuestionData.self,
-                at: "questions", "create",
-                use: createQuestionPostHandler)
-    router.get("questions", Question.parameter, "edit",
-               use: editQuestionHandler)
-    router.post("questions", Question.parameter, "edit",
-                use: editQuestionPostHandler)
-    router.post("questions", Question.parameter, "delete",
-                use: deleteQuestionHandler)
-    router.get("login", use: loginHandler)
-    router.post(LoginPostData.self, at: "login", use: loginPostHandler)
+    // Runs `AuthenticationSessionsMiddleware` before the route handlers.
+    let authSessionRoutes = router.grouped(User.authSessionsMiddleware())
+    authSessionRoutes.get(use: indexHandler)
+    authSessionRoutes.get("questions", Question.parameter,
+                          use: questionHandler)
+    authSessionRoutes.get("users", User.parameter, use: userHandler)
+    authSessionRoutes.get("users", use: allUsersHandler)
+    authSessionRoutes.get("categories", use: allCategoriesHandler)
+    authSessionRoutes.get("categories", Category.parameter,
+                          use: categoryHandler)
+    
+    authSessionRoutes.get("login", use: loginHandler)
+    authSessionRoutes.post(LoginPostData.self,
+                           at: "login",
+                           use: loginPostHandler)
+    
+    let protectedRoutes = authSessionRoutes.grouped(
+      RedirectMiddleware<User>(path: "/login"))
+    protectedRoutes.get("questions", "create", use: createQuestionHandler)
+    protectedRoutes.post(CreateQuestionData.self,
+                         at: "questions", "create",
+                         use: createQuestionPostHandler)
+    protectedRoutes.get("questions", Question.parameter, "edit",
+                        use: editQuestionHandler)
+    protectedRoutes.post("questions", Question.parameter, "edit",
+                         use: editQuestionPostHandler)
+    protectedRoutes.post("questions", Question.parameter, "delete",
+                         use: deleteQuestionHandler)
   }
   
   /// Gets rendered index page `View`.
