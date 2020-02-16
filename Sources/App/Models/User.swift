@@ -125,3 +125,9 @@ struct AdminUser: Migration {
     return .done(on: connection)
   }
 }
+
+/// Allows Vapor to authenticate users with a username and password when
+/// they login.
+extension User: PasswordAuthenticatable {}
+/// Allows the app to save and retrieve your user as part of a session.
+extension User: SessionAuthenticatable {}

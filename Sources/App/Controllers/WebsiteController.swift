@@ -9,6 +9,7 @@
 import Vapor
 import Leaf
 import Fluent
+import Authentication
 
 /// Handles all website requests.
 struct WebsiteController: RouteCollection {
@@ -32,6 +33,8 @@ struct WebsiteController: RouteCollection {
                 use: editQuestionPostHandler)
     router.post("questions", Question.parameter, "delete",
                 use: deleteQuestionHandler)
+    router.get("login", use: loginHandler)
+    router.post(LoginPostData.self, at: "login", use: loginPostHandler)
   }
   
   /// Gets rendered index page `View`.
@@ -285,6 +288,40 @@ struct WebsiteController: RouteCollection {
       .delete(on: req)
       .transform(to: req.redirect(to: "/"))
   }
+  
+  /// Gets rendered login page.
+  ///
+  /// Route at `/login`.
+  func loginHandler(_ req: Request) throws -> Future<View> {
+    let context: LoginContext
+    
+    if req.query[Bool.self, at: "error"] != nil {
+      context = LoginContext(loginError: true)
+    } else {
+      context = LoginContext()
+    }
+    
+    return try req.view().render("login", context)
+  }
+  
+  /// Sends login request.
+  ///
+  /// Route at `/login`.
+  func loginPostHandler(_ req: Request,
+                        userData: LoginPostData) throws -> Future<Response> {
+    return User.authenticate(
+      username: userData.username,
+      password: userData.password,
+      using: BCryptDigest(),
+      on: req).map(to: Response.self) { user in
+        guard let user = user else {
+          return req.redirect(to: "/login?error")
+        }
+        
+        try req.authenticateSession(user)
+        return req.redirect(to: "/")
+    }
+  }
 }
 
 /// Context for index page.
@@ -351,4 +388,18 @@ struct EditQuestionContext: Encodable {
   let users: Future<[User]>
   let editing = true
   let categories: Future<[Category]>
+}
+
+struct LoginContext: Encodable {
+  let title = "Log In"
+  let loginError: Bool
+  
+  init(loginError: Bool = false) {
+    self.loginError = loginError
+  }
+}
+
+struct LoginPostData: Content {
+  let username: String
+  let password: String
 }

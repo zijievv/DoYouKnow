@@ -32,6 +32,7 @@ public func configure(_ config: inout Config,
   middlewares.use(FileMiddleware.self)
   // Catches errors and converts to HTTP response
   middlewares.use(ErrorMiddleware.self)
+  middlewares.use(SessionsMiddleware.self)
   services.register(middlewares)
 
   // Register the configured SQLite database to the database config.
@@ -99,4 +100,7 @@ public func configure(_ config: inout Config,
   
   // Tells Vapor to use `LeafRenderer` when asked for a `ViewRenderer` type.
   config.prefer(LeafRenderer.self, for: ViewRenderer.self)
+  // Tells app to use `MemoryKeyedCache` when asked for the `KeyedCache`
+  // service.
+  config.prefer(MemoryKeyedCache.self, for: KeyedCache.self)
 }
