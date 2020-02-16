@@ -19,6 +19,9 @@ struct WebsiteController: RouteCollection {
   func boot(router: Router) throws {
     // Runs `AuthenticationSessionsMiddleware` before the route handlers.
     let authSessionRoutes = router.grouped(User.authSessionsMiddleware())
+    let protectedRoutes = authSessionRoutes.grouped(
+    RedirectMiddleware<User>(path: "/login"))
+    
     authSessionRoutes.get(use: indexHandler)
     authSessionRoutes.get("questions", Question.parameter,
                           use: questionHandler)
@@ -32,9 +35,8 @@ struct WebsiteController: RouteCollection {
     authSessionRoutes.post(LoginPostData.self,
                            at: "login",
                            use: loginPostHandler)
-    
-    let protectedRoutes = authSessionRoutes.grouped(
-      RedirectMiddleware<User>(path: "/login"))
+    authSessionRoutes.post("logout", use: logoutHandler)
+    //---------------
     protectedRoutes.get("questions", "create", use: createQuestionHandler)
     protectedRoutes.post(CreateQuestionData.self,
                          at: "questions", "create",
@@ -54,8 +56,15 @@ struct WebsiteController: RouteCollection {
   func indexHandler(_ req: Request) throws -> Future<View> {
     return Question.query(on: req).all()
       .flatMap(to: View.self) { questions in
+        let userLoggedIn = try req.isAuthenticated(User.self)
+        print("""
+          /////////////////////
+          \(userLoggedIn)
+          /////////////////////
+          """)
         let context = IndexContext(title: "Home page",
-                                   questions: questions)
+                                   questions: questions,
+                                   userLoggedIn: userLoggedIn)
         return try req.view().render("index", context)
     }
   }
@@ -333,12 +342,18 @@ struct WebsiteController: RouteCollection {
         return req.redirect(to: "/")
     }
   }
+  
+  func logoutHandler(_ req: Request) throws -> Response {
+    try req.unauthenticateSession(User.self)
+    return req.redirect(to: "/")
+  }
 }
 
 /// Context for index page.
 struct IndexContext: Encodable {
   let title: String
   let questions: [Question]
+  let userLoggedIn: Bool
 }
 
 /// Context for question detail page.
