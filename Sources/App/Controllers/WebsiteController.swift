@@ -158,7 +158,7 @@ struct WebsiteController: RouteCollection {
   }
   
   func createQuestionHandler(_ req: Request) throws -> Future<View> {
-    let context = CreateQuestionContext(users: User.query(on: req).all())
+    let context = CreateQuestionContext()
     return try req.view().render("createQuestion", context)
   }
   
@@ -166,9 +166,10 @@ struct WebsiteController: RouteCollection {
     _ req: Request,
     data: CreateQuestionData
   ) throws -> Future<Response> {
-    let question = Question(question: data.question,
+    let user = try req.requireAuthenticated(User.self)
+    let question = try Question(question: data.question,
                             detail: data.detail,
-                            userID: data.userID)
+                            userID: user.requireID())
     return question.save(on: req)
       .flatMap(to: Response.self) { question in
         guard let id = question.id else {
@@ -203,10 +204,9 @@ struct WebsiteController: RouteCollection {
   func editQuestionHandler(_ req: Request) throws -> Future<View> {
     return try req.parameters.next(Question.self)
       .flatMap(to: View.self) { question in
-        let users = User.query(on: req).all()
+//        let users = User.query(on: req).all()
         let categories = try question.categories.query(on: req).all()
         let context = EditQuestionContext(question: question,
-                                          users: users,
                                           categories: categories)
         return try req.view().render("createQuestion", context)
     }
@@ -217,9 +217,10 @@ struct WebsiteController: RouteCollection {
       to: Response.self,
       req.parameters.next(Question.self),
       req.content.decode(CreateQuestionData.self)) { question, data in
+        let user = try req.requireAuthenticated(User.self)
         question.question = data.question
         question.detail = data.detail
-        question.userID = data.userID
+        question.userID = try user.requireID()
         
         guard let id = question.id else {
           throw Abort(.internalServerError)
@@ -381,7 +382,7 @@ struct CategoryContext: Encodable {
 
 /// Stores the required data when cerating or editing a question.
 struct CreateQuestionData: Content {
-  let userID: User.ID
+//  let userID: User.ID
   let question: String
   let detail: String
   let categories: [String]?
@@ -389,13 +390,13 @@ struct CreateQuestionData: Content {
 
 struct CreateQuestionContext: Encodable {
   let title = "Create A Question"
-  let users: Future<[User]>
+//  let users: Future<[User]>
 }
 
 struct EditQuestionContext: Encodable {
   let title = "Edit Question"
   let question: Question
-  let users: Future<[User]>
+//  let users: Future<[User]>
   let editing = true
   let categories: Future<[Category]>
 }
