@@ -10,32 +10,51 @@
 </footer>
 #if(count(categories) > 0) {
 <h2>Categories</h2>
-<ul>
+
+<div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
   #for(category in categories) {
-  <li>
-    <a href="/categories/#(category.id)">
-      #(category.name)
-    </a>
-  </li>
+  <form class="form-inline" action="/categories/#(category.id)" method="GET">
+    <input class="nav-link btn btn-outline-info" type="submit" value="#(category.name)">
+  </form>
+  <p>&nbsp;</p>
   }
-</ul>
-}
-<!--<p>&nbsp;</p>-->
-<!--#for(answer in answers) {-->
-<!--<article class="forecast">-->
-<!--  <hr />-->
-<!--  <p>#(answer.answer)</p>-->
-<!--</article>-->
+</div>
+<!--<ul>-->
+<!--  #for(category in categories) {-->
+<!--  <li>-->
+<!--    <a href="/categories/#(category.id)">-->
+<!--      #(category.name)-->
+<!--    </a>-->
+<!--  </li>-->
+<!--  }-->
+<!--</ul>-->
 <!--}-->
-<!--#for(user in usersOfAnswers) {-->
-<!--<p>#(user.name)</p>-->
-<!--}-->
+</a>&nbsp;
 <form method="post" action="/questions/#(question.id)/delete">
   <a class="btn btn-primary" href="/questions/#(question.id)/edit" role="button">
     Edit
   </a>&nbsp;
   <input class="btn btn-danger" type="submit" value="Delete" />
 </form>
+
+<p>&nbsp;</p>
+<h2>Answers
+  &nbsp;
+  <a class="btn btn-info" href="/questions/#(question.id)/edit" role="button">
+    Write an answer
+  </a>
+</h2>
+#for(answerData in answersData) {
+<article class="forecast">
+  <hr />
+  <p>#(answerData.answer.answer)</p>
+  <footer>
+    <i>
+      <a href="/users/#(answerData.user.id)">#(answerData.user.name)</a>
+    </i>
+  </footer>
+</article>
+}
 }
 
 #embed("base")

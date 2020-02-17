@@ -96,6 +96,31 @@ struct WebsiteController: RouteCollection {
 //    }
 //  }
   
+  func questionHandler(_ req: Request) throws -> Future<View> {
+    return try req.parameters.next(Question.self)
+      .flatMap(to: View.self) { question in
+        return question.user.get(on: req)
+          .flatMap(to: View.self) { userOfQuestion in
+            return try question.answers.query(on: req).all()
+              .flatMap(to: View.self) { answers in
+                let categories = try question.categories.query(on: req).all()
+                let answersData: [AnswerData] = answers.compactMap {
+                  answer in
+                  AnswerData(answer: answer,
+                             user: answer.user.get(on: req))
+                }
+                let context = QuestionContext(
+                  title: question.question,
+                  question: question,
+                  userOfQuestion: userOfQuestion,
+                  categories: categories,
+                  answersData: answersData)
+                return try req.view().render("question", context)
+            }
+        }
+    }
+  }
+  
 //  func questionHandler(_ req: Request) throws -> Future<View> {
 //    return try req.parameters.next(Question.self)
 //      .flatMap(to: View.self) { question in
@@ -118,20 +143,20 @@ struct WebsiteController: RouteCollection {
 //    }
 //  }
   
-  func questionHandler(_ req: Request) throws -> Future<View> {
-    return try req.parameters.next(Question.self)
-      .flatMap(to: View.self) { question in
-        return question.user.get(on: req)
-          .flatMap(to: View.self) { userOfQuestion in
-            let categories = try question.categories.query(on: req).all()
-            let context = QuestionContext(title: question.question,
-                                          question: question,
-                                          userOfQuestion: userOfQuestion,
-                                          categories: categories)
-            return try req.view().render("question", context)
-        }
-    }
-  }
+//  func questionHandler(_ req: Request) throws -> Future<View> {
+//    return try req.parameters.next(Question.self)
+//      .flatMap(to: View.self) { question in
+//        return question.user.get(on: req)
+//          .flatMap(to: View.self) { userOfQuestion in
+//            let categories = try question.categories.query(on: req).all()
+//            let context = QuestionContext(title: question.question,
+//                                          question: question,
+//                                          userOfQuestion: userOfQuestion,
+//                                          categories: categories)
+//            return try req.view().render("question", context)
+//        }
+//    }
+//  }
   
   func userHandler(_ req: Request) throws -> Future<View> {
     return try req.parameters.next(User.self)
@@ -429,6 +454,13 @@ struct QuestionContext: Encodable {
   /// The user owning the question.
   let userOfQuestion: User
   let categories: Future<[Category]>
+  ///
+  let answersData: [AnswerData]
+}
+
+struct AnswerData: Encodable {
+  let answer: Answer
+  let user: Future<User>
 }
 
 /// Context for user page.
@@ -437,7 +469,7 @@ struct UserContext: Encodable {
   let title: String
   /// The user.
   let user: User
-  // The questions the user owning.
+  /// The questions the user owning.
   let questions: [Question]
 }
 
