@@ -49,6 +49,12 @@
         <form class="form-inline" action="/logout" method="POST">
           <input class="nav-link btn btn-outline-warning" type="submit" value="Log out">
         </form>
+        } else {
+        #if(title == "Home page") {
+        <form class="form-inline" action="/login" method="GET">
+          <input class="nav-link btn btn-outline-primary" type="submit" value="Log in">
+        </form>
+        }
         }
       </div>
     </nav>
