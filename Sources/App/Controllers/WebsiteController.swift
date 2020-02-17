@@ -169,7 +169,14 @@ struct WebsiteController: RouteCollection {
   }
   
   func createQuestionHandler(_ req: Request) throws -> Future<View> {
-    let context = CreateQuestionContext()
+    // Creates a token using 16 bytes of randomly generated data, base64
+    // encoded.
+    let token = try CryptoRandom()
+      .generateData(count: 16)
+      .base64EncodedString()
+    let context = CreateQuestionContext(csrfToken: token)
+    // Saves the token into the request's session under the CSRF_TOKEN key.
+    try req.session()["CSRF_TOKEN"] = token
     return try req.view().render("createQuestion", context)
   }
   
@@ -409,6 +416,8 @@ struct CreateQuestionData: Content {
 struct CreateQuestionContext: Encodable {
   let title = "Create A Question"
 //  let users: Future<[User]>
+  /// Supports The Cross-Site Request Forgery token.
+  let csrfToken: String
 }
 
 struct EditQuestionContext: Encodable {
