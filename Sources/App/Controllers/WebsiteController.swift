@@ -36,6 +36,10 @@ struct WebsiteController: RouteCollection {
                            at: "login",
                            use: loginPostHandler)
     authSessionRoutes.post("logout", use: logoutHandler)
+    authSessionRoutes.get("register", use: registerHandler)
+    authSessionRoutes.post(RegisterData.self,
+                           at: "register",
+                           use: registerPostHandler)
     //---------------
     protectedRoutes.get("questions", "create", use: createQuestionHandler)
     protectedRoutes.post(CreateQuestionData.self,
@@ -356,6 +360,23 @@ struct WebsiteController: RouteCollection {
     try req.unauthenticateSession(User.self)
     return req.redirect(to: "/")
   }
+  
+  func registerHandler(_ req: Request) throws -> Future<View> {
+    let context = RegisterContext()
+    return try req.view().render("register", context)
+  }
+  
+  func registerPostHandler(_ req: Request,
+                           data: RegisterData) throws -> Future<Response> {
+    let password = try BCrypt.hash(data.password)
+    let user = User(name: data.name,
+                    username: data.username,
+                    password: password)
+    return user.save(on: req).map(to: Response.self) { user in
+      try req.authenticateSession(user)
+      return req.redirect(to: "/")
+    }
+  }
 }
 
 /// Context for index page.
@@ -440,4 +461,15 @@ struct LoginContext: Encodable {
 struct LoginPostData: Content {
   let username: String
   let password: String
+}
+
+struct RegisterContext: Encodable {
+  let title = "Register"
+}
+
+struct RegisterData: Content {
+  let name: String
+  let username: String
+  let password: String
+  let confirmPassword: String
 }
