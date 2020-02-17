@@ -10,6 +10,7 @@
     #if(title == "Create A Question" || title == "Edit Question") {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" integrity="sha384-RdQbeSCGSeSdSlTMGnUr2oDJZzOuGjJAkQy1MbKMu8fZT5G0qlBajY0n0sY/hKMK" crossorigin="anonymous">
     }
+    <link rel="stylesheet" href="/styles/style.css">
     <title>#(title) | DoYouKnow</title>
   </head>
 
@@ -55,6 +56,17 @@
     <div class="container mt-3">
       #get(content)
     </div>
+    
+    #if(showCookieMessage) {
+    <footer id="cokkie-footer">
+      <div id="cookieMessage" class="container">
+        <span class="muted">
+          This site uses cookies! To accept this, click <a href="#" onclick="cookiesConfirmed()">OK</a>
+        </span>
+      </div>
+    </footer>
+    <script src="/scripts/cookies.js"></script>
+    }
     
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>
     #if(title == "Create A Question" || title == "Edit Question") {

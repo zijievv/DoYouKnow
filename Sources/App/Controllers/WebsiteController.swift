@@ -57,14 +57,16 @@ struct WebsiteController: RouteCollection {
     return Question.query(on: req).all()
       .flatMap(to: View.self) { questions in
         let userLoggedIn = try req.isAuthenticated(User.self)
-        print("""
-          /////////////////////
-          \(userLoggedIn)
-          /////////////////////
-          """)
+//        print("""
+//          /////////////////////
+//          \(userLoggedIn)
+//          /////////////////////
+//          """)
+        let showCookieMessage = req.http.cookies["cookies-accepted"] == nil
         let context = IndexContext(title: "Home page",
                                    questions: questions,
-                                   userLoggedIn: userLoggedIn)
+                                   userLoggedIn: userLoggedIn,
+                                   showCookieMessage: showCookieMessage)
         return try req.view().render("index", context)
     }
   }
@@ -354,6 +356,7 @@ struct IndexContext: Encodable {
   let title: String
   let questions: [Question]
   let userLoggedIn: Bool
+  let showCookieMessage: Bool
 }
 
 /// Context for question detail page.
