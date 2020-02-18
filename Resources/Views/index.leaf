@@ -1,10 +1,7 @@
 #set("content") {
 <img src="/images/logo.png" class="mx-auto d-block" alt="DoYouKnow Logo" />
-<!--<p>&nbsp;</p>-->
-<!--<h1>My Questions</h1>-->
 <p>&nbsp;</p>
 <hr />
-<!--<p>&nbsp;</p>-->
 
 #embed("questionsTable")
 }

@@ -17,6 +17,11 @@ struct WebsiteController: RouteCollection {
   ///
   /// - Parameter router: To register any new routes to.
   func boot(router: Router) throws {
+    router.get("answers", Answer.parameter, use: answerHandler)
+    router.get("answers", "create", use: createAnswerHandler)
+    router.post(Answer.self,
+                at: "answers", "create",
+                use: createAnswerPostHandler)
     // Runs `AuthenticationSessionsMiddleware` before the route handlers.
     let authSessionRoutes = router.grouped(User.authSessionsMiddleware())
     let protectedRoutes = authSessionRoutes.grouped(
@@ -75,27 +80,6 @@ struct WebsiteController: RouteCollection {
     }
   }
   
-//  func questionHandler(_ req: Request) throws -> Future<View> {
-//    return try req.parameters.next(Question.self)
-//      .flatMap(to: View.self) { question in
-//        return question.user.get(on: req)
-//          .flatMap(to: View.self) { userOfQuestion in
-//            return try question.answers.query(on: req).all()
-//              .flatMap(to: View.self) { answers in
-//                let usersOfAnswers: [User] = try answers
-//                  .compactMap { answer in
-//                    try answer.user.get(on: req).wait()
-//                }
-//                let context = QuestionContext(
-//                  title: question.question,
-//                  question: question,
-//                  userOfQuestion: userOfQuestion, answers: answers, usersOfAnswers: usersOfAnswers)
-//                return try req.view().render("question", context)
-//            }
-//        }
-//    }
-//  }
-  
   func questionHandler(_ req: Request) throws -> Future<View> {
     return try req.parameters.next(Question.self)
       .flatMap(to: View.self) { question in
@@ -121,42 +105,27 @@ struct WebsiteController: RouteCollection {
     }
   }
   
-//  func questionHandler(_ req: Request) throws -> Future<View> {
-//    return try req.parameters.next(Question.self)
-//      .flatMap(to: View.self) { question in
-//        return question.user.get(on: req)
-//          .flatMap(to: View.self) { userOfQuestion in
-//            return try question.answers.query(on: req).all()
-//              .flatMap(to: View.self) { answers in
-//                let usersOfAnswersIDs = answers.compactMap { $0.userID }
-//                return User.query(on: req).filter(\.id ~~ usersOfAnswersIDs).all()
-//                  .flatMap(to: View.self) { usersOfAnswers in
-//                    let context = QuestionContext(title: question.question,
-//                                                  question: question,
-//                                                  userOfQuestion: userOfQuestion,
-//                                                  answers: answers,
-//                                                  usersOfAnswers: usersOfAnswers)
-//                    return try req.view().render("question", context)
-//                }
-//            }
-//        }
-//    }
-//  }
-  
-//  func questionHandler(_ req: Request) throws -> Future<View> {
-//    return try req.parameters.next(Question.self)
-//      .flatMap(to: View.self) { question in
-//        return question.user.get(on: req)
-//          .flatMap(to: View.self) { userOfQuestion in
-//            let categories = try question.categories.query(on: req).all()
-//            let context = QuestionContext(title: question.question,
-//                                          question: question,
-//                                          userOfQuestion: userOfQuestion,
-//                                          categories: categories)
-//            return try req.view().render("question", context)
-//        }
-//    }
-//  }
+  func answerHandler(_ req: Request) throws -> Future<View> {
+    return try req.parameters.next(Answer.self)
+      .flatMap(to: View.self) { answer in
+        return answer.user.get(on: req)
+          .flatMap(to: View.self) { userOfAnswer in
+            return answer.question.get(on: req)
+              .flatMap(to: View.self) { question in
+                return question.user.get(on: req)
+                  .flatMap(to: View.self) { userOfQuestion in
+                    let context = AnswerContext(
+                      title: question.question,
+                      question: question,
+                      userOfQuestion: userOfQuestion,
+                      answer: answer,
+                      userOfAnswer: userOfAnswer)
+                    return try req.view().render("answer", context)
+                }
+            }
+        }
+    }
+  }
   
   func userHandler(_ req: Request) throws -> Future<View> {
     return try req.parameters.next(User.self)
@@ -235,23 +204,27 @@ struct WebsiteController: RouteCollection {
         return categorySaves.flatten(on: req).transform(to: redirect)
     }
   }
-//  func createQuestionPostHandler(
-//    _ req: Request,
-//    question: Question
-//  ) throws -> Future<Response> {
-//    return question.save(on: req).map(to: Response.self) {
-//      question in
-//      guard let id = question.id else {
-//        throw Abort(.internalServerError)
-//      }
-//      return req.redirect(to: "/questions/\(id)")
-//    }
-//  }
+  
+  func createAnswerHandler(_ req: Request) throws -> Future<View> {
+    let context = CreateAnswerContext(
+      users: User.query(on: req).all(),
+      questions: Question.query(on: req).all())
+    return try req.view().render("createAnswer", context)
+  }
+
+  func createAnswerPostHandler(_ req: Request, answer: Answer) throws -> Future<Response> {
+    return answer.save(on: req)
+      .map(to: Response.self) { answer in
+        guard let _ = answer.id else {
+          throw Abort(.internalServerError)
+        }
+        return req.redirect(to: "/")
+    }
+  }
   
   func editQuestionHandler(_ req: Request) throws -> Future<View> {
     return try req.parameters.next(Question.self)
       .flatMap(to: View.self) { question in
-//        let users = User.query(on: req).all()
         let categories = try question.categories.query(on: req).all()
         let context = EditQuestionContext(question: question,
                                           categories: categories)
@@ -463,6 +436,15 @@ struct AnswerData: Encodable {
   let user: Future<User>
 }
 
+/// Context for Answer detail page.
+struct AnswerContext: Encodable {
+  let title: String
+  let question: Question
+  let userOfQuestion: User
+  let answer: Answer
+  let userOfAnswer: User
+}
+
 /// Context for user page.
 struct UserContext: Encodable {
   /// Page's title
@@ -504,6 +486,12 @@ struct CreateQuestionContext: Encodable {
 //  let users: Future<[User]>
   /// Supports The Cross-Site Request Forgery token.
   let csrfToken: String
+}
+
+struct CreateAnswerContext: Encodable {
+  let title = "Write Your Answer"
+  let users: Future<[User]>
+  let questions: Future<[Question]>
 }
 
 struct EditQuestionContext: Encodable {

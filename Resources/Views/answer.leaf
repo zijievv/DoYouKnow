@@ -1,0 +1,29 @@
+#set("content") {
+<h1>
+  <a href="/questions/#(question.id)">
+    #(question.question)
+  </a>
+</h1>
+#if(question.detail) {
+<p>#(question.detail)</p>
+}
+<footer>
+  <i>
+    <a href="/users/#(userOfQuestion.id)">#(userOfQuestion.name)</a>
+  </i>
+</footer>
+<p>&nbsp;</p>
+<hr />
+
+<article class="forecast">
+  <hr />
+  <p>#(answer.answer)</p>
+  <footer>
+    <i>
+      <a href="/users/#(userOfAnswer.id)">#(userOfAnswer.name)</a>
+    </i>
+  </footer>
+</article>
+}
+
+#embed("base")

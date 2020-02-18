@@ -8,6 +8,7 @@
     <a href="/users/#(userOfQuestion.id)">#(userOfQuestion.name)</a>
   </i>
 </footer>
+
 #if(count(categories) > 0) {
 <h2>Categories</h2>
 
@@ -19,17 +20,9 @@
   <p>&nbsp;</p>
   }
 </div>
-<!--<ul>-->
-<!--  #for(category in categories) {-->
-<!--  <li>-->
-<!--    <a href="/categories/#(category.id)">-->
-<!--      #(category.name)-->
-<!--    </a>-->
-<!--  </li>-->
-<!--  }-->
-<!--</ul>-->
-<!--}-->
-</a>&nbsp;
+}
+
+&nbsp;
 <form method="post" action="/questions/#(question.id)/delete">
   <a class="btn btn-primary" href="/questions/#(question.id)/edit" role="button">
     Edit
@@ -40,14 +33,16 @@
 <p>&nbsp;</p>
 <h2>Answers
   &nbsp;
-  <a class="btn btn-info" href="/questions/#(question.id)/edit" role="button">
-    Write an answer
+  <a class="btn btn-info" href="/answers/create" role="button">
+    Write an answer 📝
   </a>
 </h2>
 #for(answerData in answersData) {
-<article class="forecast">
+<article class="forecast" id="answer-item">
   <hr />
-  <p>#(answerData.answer.answer)</p>
+  <a href="/answers/#(answerData.answer.id)">
+    <p>#(answerData.answer.answer)</p>
+  </a>
   <footer>
     <i>
       <a href="/users/#(answerData.user.id)">#(answerData.user.name)</a>

@@ -6,3 +6,8 @@
   line-height: 60px;
   background-color: #f5f5f5;
 }
+#answer-item {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: "...";
+}
