@@ -22,6 +22,11 @@ struct WebsiteController: RouteCollection {
     router.post(Answer.self,
                 at: "answers", "create",
                 use: createAnswerPostHandler)
+    router.get("answers", Answer.parameter, "edit", use: editAnswerHandler)
+    router.post("answers", Answer.parameter, "edit",
+                use: editAnswerPostHandler)
+    router.post("answers", Answer.parameter, "delete",
+                  use: deleteAnswerHandler)
     // Runs `AuthenticationSessionsMiddleware` before the route handlers.
     let authSessionRoutes = router.grouped(User.authSessionsMiddleware())
     let protectedRoutes = authSessionRoutes.grouped(
@@ -314,8 +319,46 @@ struct WebsiteController: RouteCollection {
 //    }
   }
   
+  func editAnswerHandler(_ req: Request) throws -> Future<View> {
+    return try req.parameters.next(Answer.self)
+      .flatMap(to: View.self) { answer in
+        return answer.question.get(on: req)
+          .flatMap(to: View.self) { question in
+            let context = EditAnswerContext(
+              questions: Question.query(on: req).all(),
+              answer: answer,
+              users: User.query(on: req).all())
+            return try req.view().render("createAnswer", context)
+        }
+    }
+  }
+  
+  func editAnswerPostHandler(_ req: Request) throws -> Future<Response> {
+    return try flatMap(
+      to: Response.self,
+      req.parameters.next(Answer.self),
+      req.content.decode(Answer.self)) { answer, data in
+        answer.answer = data.answer
+        answer.userID = data.userID
+        
+        guard let id = answer.id else {
+          throw Abort(.internalServerError)
+        }
+        
+        let redirect = req.redirect(to: "/answers/\(id)")
+        
+        return answer.save(on: req).transform(to: redirect)
+    }
+  }
+  
   func deleteQuestionHandler(_ req: Request) throws -> Future<Response> {
     return try req.parameters.next(Question.self)
+      .delete(on: req)
+      .transform(to: req.redirect(to: "/"))
+  }
+  
+  func deleteAnswerHandler(_ req: Request) throws -> Future<Response> {
+    return try req.parameters.next(Answer.self)
       .delete(on: req)
       .transform(to: req.redirect(to: "/"))
   }
@@ -407,147 +450,5 @@ struct WebsiteController: RouteCollection {
       try req.authenticateSession(user)
       return req.redirect(to: "/")
     }
-  }
-}
-
-/// Context for index page.
-struct IndexContext: Encodable {
-  let title: String
-  let questions: [Question]
-  let userLoggedIn: Bool
-  let showCookieMessage: Bool
-}
-
-/// Context for question detail page.
-struct QuestionContext: Encodable {
-  /// Page's title
-  let title: String
-  /// The question rendered on the page.
-  let question: Question
-  /// The user owning the question.
-  let userOfQuestion: User
-  let categories: Future<[Category]>
-  ///
-  let answersData: [AnswerData]
-}
-
-struct AnswerData: Encodable {
-  let answer: Answer
-  let user: Future<User>
-}
-
-/// Context for Answer detail page.
-struct AnswerContext: Encodable {
-  let title: String
-  let question: Question
-  let userOfQuestion: User
-  let answer: Answer
-  let userOfAnswer: User
-}
-
-/// Context for user page.
-struct UserContext: Encodable {
-  /// Page's title
-  let title: String
-  /// The user.
-  let user: User
-  /// The questions the user owning.
-  let questions: [Question]
-}
-
-/// Context for all users page.
-struct AllUsersContext: Encodable {
-  let title: String
-  let users: [User]
-}
-
-/// Context for all categories page.
-struct AllCategoriesContext: Encodable {
-  let title = "All Categories"
-  let categories: Future<[Category]>
-}
-
-struct CategoryContext: Encodable {
-  let title: String
-  let category: Category
-  let questions: Future<[Question]>
-}
-
-/// Stores the required data when cerating or editing a question.
-struct CreateQuestionData: Content {
-//  let userID: User.ID
-  let question: String
-  let detail: String
-  let categories: [String]?
-}
-
-struct CreateQuestionContext: Encodable {
-  let title = "Create A Question"
-//  let users: Future<[User]>
-  /// Supports The Cross-Site Request Forgery token.
-  let csrfToken: String
-}
-
-struct CreateAnswerContext: Encodable {
-  let title = "Write Your Answer"
-  let users: Future<[User]>
-  let questions: Future<[Question]>
-}
-
-struct EditQuestionContext: Encodable {
-  let title = "Edit Question"
-  let question: Question
-//  let users: Future<[User]>
-  let editing = true
-  let categories: Future<[Category]>
-}
-
-struct LoginContext: Encodable {
-  let title = "Log In"
-  let loginError: Bool
-  
-  init(loginError: Bool = false) {
-    self.loginError = loginError
-  }
-}
-
-struct LoginPostData: Content {
-  let username: String
-  let password: String
-}
-
-struct RegisterContext: Encodable {
-  let title = "Register"
-  let message: String?
-  
-  init(message: String? = nil) {
-    self.message = message
-  }
-}
-
-struct RegisterData: Content {
-  let name: String
-  let username: String
-  let password: String
-  let confirmPassword: String
-}
-
-extension RegisterData: Validatable, Reflectable {
-  static func validations() throws -> Validations<RegisterData> {
-    var validations = Validations(RegisterData.self)
-    try validations.add(\.name, .ascii)
-    try validations.add(\.username, .alphanumeric && .count(3...))
-    try validations.add(
-      \.password,
-      .characterSet(.alphanumerics + .punctuationCharacters + .symbols)
-        && .count(8...)
-    )
-    
-    validations.add("passwords match") { model in
-      guard model.password == model.confirmPassword else {
-        throw BasicValidationError("password don't match")
-      }
-    }
-    return validations
   }
 }

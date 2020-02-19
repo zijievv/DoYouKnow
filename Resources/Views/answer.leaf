@@ -24,6 +24,16 @@
     </i>
   </footer>
 </article>
+
+&nbsp;
+<div>
+  <form method="post" action="/answers/#(answer.id)/delete">
+    <a class="btn btn-primary" href="/answers/#(answer.id)/edit" role="button">
+      Edit
+    </a>&nbsp;
+    <input class="btn btn-danger" type="submit" value="Delete" />
+  </form>
+</div>
 }
 
 #embed("base")
