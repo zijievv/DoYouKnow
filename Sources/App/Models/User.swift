@@ -61,6 +61,7 @@ extension User: Migration {
   static func prepare(on connection: MySQLConnection) -> Future<Void> {
     return Database.create(self, on: connection) { (builder) in
       try addProperties(to: builder)
+      // Makes `username` unique.
       builder.unique(on: \.username)
     }
   }

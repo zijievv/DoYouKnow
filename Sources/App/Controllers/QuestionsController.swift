@@ -106,14 +106,6 @@ struct QuestionsController: RouteCollection {
                                 detail: data.detail,
                                 userID: user.requireID())
     return question.save(on: req)
-//    // Decode the request's JSON into an `Question` model using `Codable`.
-//    return try req.content.decode(Question.self)
-//      .flatMap(to: Question.self) { question in
-//        // Save the model using Fluen.
-//        // Returns `Future<Question>` as it returns the model once it's
-//        // saved.
-//        return question.save(on: req)
-//    }
   }
   
   /// Updates a question with specified ID.

@@ -8,6 +8,7 @@
 
 import Vapor
 //import Fluent
+import Authentication
 
 struct AnswersController: RouteCollection {
   /// Registers `Answer`'s routes to the incoming router.
@@ -19,12 +20,22 @@ struct AnswersController: RouteCollection {
     // About Answer
     answersRoute.get(use: getAllHandler)
     answersRoute.get(Answer.parameter, use: getHandler)
-    answersRoute.post(Answer.self, use: createHandler)
-    answersRoute.put(Answer.parameter, use: updateHandler)
-    answersRoute.delete(Answer.parameter, use: deleteHandler)
     // About Question, User.
     answersRoute.get(Answer.parameter, "question", use: getQuestionHandler)
     answersRoute.get(Answer.parameter, "user", use: getUserHandler)
+    
+//    let basicAuthMiddleware = User.basicAuthMiddleware(using: BCryptDigest())
+//    let guardAuthMiddleware = User.guardAuthMiddleware()
+//    let protected = answersRoute.grouped(basicAuthMiddleware,
+//                                         guardAuthMiddleware)
+//    protected.post(Answer.self, use: createHandler)
+    let tokenAuthMiddleware = User.tokenAuthMiddleware()
+    let guardAuthMiddleware = User.guardAuthMiddleware()
+    let tokenAuthGroup = answersRoute.grouped(tokenAuthMiddleware,
+                                              guardAuthMiddleware)
+    tokenAuthGroup.post(AnswerCreateData.self, use: createHandler)
+    tokenAuthGroup.put(Answer.parameter, use: updateHandler)
+    tokenAuthGroup.delete(Answer.parameter, use: deleteHandler)
   }
   
   // MARK:- About `Answer`.
@@ -48,7 +59,11 @@ struct AnswersController: RouteCollection {
   /// `Future<Answer>`.
   ///
   /// - Returns: The answer once it's saved.
-  func createHandler(_ req: Request, answer: Answer) throws -> Future<Answer> {
+  func createHandler(_ req: Request, data: AnswerCreateData) throws -> Future<Answer> {
+    let user = try req.requireAuthenticated(User.self)
+    let answer = try Answer(answer: data.answer,
+                            userID: user.requireID(),
+                            questionID: data.questionID)
     return answer.save(on: req)
   }
   
@@ -59,11 +74,16 @@ struct AnswersController: RouteCollection {
   ///
   /// - Returns: The answer once it's saved.
   func updateHandler(_ req: Request) throws -> Future<Answer> {
-    return try flatMap(to: Answer.self,
+    return try flatMap(
+      to: Answer.self,
       req.parameters.next(Answer.self),
-      req.content.decode(Answer.self)) {
-        answer, updatedAnswer in
-        answer.answer = updatedAnswer.answer
+      req.content.decode(AnswerCreateData.self)) {
+        answer, updatedData in
+        answer.answer = updatedData.answer
+        answer.questionID = updatedData.questionID
+        
+        let user = try req.requireAuthenticated(User.self)
+        answer.userID = try user.requireID()
         return answer.save(on: req)
     }
   }
@@ -79,7 +99,7 @@ struct AnswersController: RouteCollection {
       .delete(on: req)
       .transform(to: .noContent)
   }
-  
+
   // MARK:- About `Question` and `User`.
   /// Gets the question of the answer.
   ///
@@ -100,4 +120,11 @@ struct AnswersController: RouteCollection {
         answer.user.get(on: req).convertToPublic()
     }
   }
+}
+
+/// Defines the request data that a user now has to send to create a
+/// answer.
+struct AnswerCreateData: Content {
+  let answer: String
+  let questionID: Question.ID
 }
