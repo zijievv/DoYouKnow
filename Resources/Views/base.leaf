@@ -28,9 +28,9 @@
             <a href="/" class="nav-link">Home</a>
           </li>
           
-          <li class="nav-item #if(title == "All Users"){active}">
-            <a href="/users" class="nav-link">All Users</a>
-          </li>
+<!--          <li class="nav-item #if(title == "All Users"){active}">-->
+<!--            <a href="/users" class="nav-link">All Users</a>-->
+<!--          </li>-->
           
           <li class="nav-item #if(title == "All Categories"){active}">
             <a href="/categories" class="nav-link">All Categories</a>
@@ -54,10 +54,8 @@
           <input class="nav-link btn btn-outline-primary" type="submit" value="Log in">
         </form>
         }
-        } else {
-<!--        <button type="submit" class="btn btn-primary">-->
-<!--          Logout-->
-<!--        </button>-->
+        }
+        #if(userLoggedIn) {
         <form class="form-inline" action="/logout" method="POST">
           <input class="nav-link btn btn-outline-danger" type="submit" value="Log out">
         </form>
@@ -67,6 +65,7 @@
 
     <div class="container mt-3">
       #get(content)
+      <p>#if(!userLoggedIn) { not logged in}else { already logged in}</p>
     </div>
     
     #if(showCookieMessage) {

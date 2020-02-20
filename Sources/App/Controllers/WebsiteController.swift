@@ -26,16 +26,20 @@ struct WebsiteController: RouteCollection {
     authSessionRoutes.get("questions", Question.parameter,
                           use: questionHandler)
     authSessionRoutes.get("answers", Answer.parameter, use: answerHandler)
+    
     authSessionRoutes.get("users", User.parameter, use: userHandler)
     authSessionRoutes.get("users", use: allUsersHandler)
+    
     authSessionRoutes.get("categories", use: allCategoriesHandler)
     authSessionRoutes.get("categories", Category.parameter,
                           use: categoryHandler)
+    
     authSessionRoutes.get("login", use: loginHandler)
     authSessionRoutes.post(LoginPostData.self,
                            at: "login",
                            use: loginPostHandler)
     authSessionRoutes.post("logout", use: logoutHandler)
+    
     authSessionRoutes.get("register", use: registerHandler)
     authSessionRoutes.post(RegisterData.self,
                            at: "register",
@@ -51,9 +55,13 @@ struct WebsiteController: RouteCollection {
                          use: editQuestionPostHandler)
     protectedRoutes.post("questions", Question.parameter, "delete",
                          use: deleteQuestionHandler)
-    protectedRoutes.get("answers", "create", use: createAnswerHandler)
+    
+    protectedRoutes.get("questions", Question.parameter,
+                        "answers", "create",
+                        use: createAnswerHandler)
     protectedRoutes.post(CreateAnswerData.self,
-                         at: "answers", "create",
+                         at: "questions", Question.parameter,
+                         "answers", "create",
                          use: createAnswerPostHandler)
     protectedRoutes.get("answers", Answer.parameter, "edit",
                         use: editAnswerHandler)
@@ -211,25 +219,34 @@ struct WebsiteController: RouteCollection {
   }
   
   func createAnswerHandler(_ req: Request) throws -> Future<View> {
-    let context = CreateAnswerContext(
-      questions: Question.query(on: req).all())
-    return try req.view().render("createAnswer", context)
+    return try req.parameters.next(Question.self)
+      .flatMap(to: View.self) { question in
+        let context = CreateAnswerContext(question: question)
+        return try req.view().render("createAnswer", context)
+    }
   }
 
   func createAnswerPostHandler(
     _ req: Request,
     data: CreateAnswerData
   ) throws -> Future<Response> {
-    let user = try req.requireAuthenticated(User.self)
-    let answer = try Answer(answer: data.answer,
-                        userID: user.requireID(),
-                        questionID: data.questionID)
-    return answer.save(on: req)
-      .map(to: Response.self) { answer in
-        guard let id = answer.id else {
+    
+    return try req.parameters.next(Question.self)
+      .flatMap(to: Response.self) { question in
+        guard let questionID = question.id else {
           throw Abort(.internalServerError)
         }
-        return req.redirect(to: "/answers/\(id)")
+        let user = try req.requireAuthenticated(User.self)
+        let answer = try Answer(answer: data.answer,
+                            userID: user.requireID(),
+                            questionID: questionID)
+        return answer.save(on: req)
+          .map(to: Response.self) { answer in
+            guard let id = answer.id else {
+              throw Abort(.internalServerError)
+            }
+            return req.redirect(to: "/answers/\(id)")
+        }
     }
   }
   
@@ -315,9 +332,8 @@ struct WebsiteController: RouteCollection {
       .flatMap(to: View.self) { answer in
         return answer.question.get(on: req)
           .flatMap(to: View.self) { question in
-            let context = EditAnswerContext(
-              questions: Question.query(on: req).all(),
-              answer: answer)
+            let context = EditAnswerContext(question: question,
+                                            answer: answer)
             return try req.view().render("createAnswer", context)
         }
     }

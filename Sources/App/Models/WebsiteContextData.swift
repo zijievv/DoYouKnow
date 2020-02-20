@@ -88,13 +88,12 @@ struct CreateQuestionContext: Encodable {
 }
 
 struct CreateAnswerData: Content {
-  let questionID: Question.ID
   let answer: String
 }
 
 struct CreateAnswerContext: Encodable {
   let title = "Write Your Answer"
-  let questions: Future<[Question]>
+  let question: Question
 }
 
 struct EditQuestionContext: Encodable {
@@ -106,7 +105,7 @@ struct EditQuestionContext: Encodable {
 
 struct EditAnswerContext: Encodable {
   let title = "Edit Answer"
-  let questions: Future<[Question]>
+  let question: Question
   let answer: Answer
   let editing = true
 }

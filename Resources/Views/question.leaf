@@ -33,7 +33,7 @@
 <p>&nbsp;</p>
 <h2>Answers
   &nbsp;
-  <a class="btn btn-info" href="/answers/create" role="button">
+  <a class="btn btn-info" href="/questions/#(question.id)/answers/create" role="button">
     Write an answer 📝
   </a>
 </h2>
