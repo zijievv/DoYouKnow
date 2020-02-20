@@ -17,30 +17,20 @@ struct WebsiteController: RouteCollection {
   ///
   /// - Parameter router: To register any new routes to.
   func boot(router: Router) throws {
-    router.get("answers", Answer.parameter, use: answerHandler)
-    router.get("answers", "create", use: createAnswerHandler)
-    router.post(Answer.self,
-                at: "answers", "create",
-                use: createAnswerPostHandler)
-    router.get("answers", Answer.parameter, "edit", use: editAnswerHandler)
-    router.post("answers", Answer.parameter, "edit",
-                use: editAnswerPostHandler)
-    router.post("answers", Answer.parameter, "delete",
-                  use: deleteAnswerHandler)
     // Runs `AuthenticationSessionsMiddleware` before the route handlers.
     let authSessionRoutes = router.grouped(User.authSessionsMiddleware())
     let protectedRoutes = authSessionRoutes.grouped(
-    RedirectMiddleware<User>(path: "/login"))
+      RedirectMiddleware<User>(path: "/login"))
     
     authSessionRoutes.get(use: indexHandler)
     authSessionRoutes.get("questions", Question.parameter,
                           use: questionHandler)
+    authSessionRoutes.get("answers", Answer.parameter, use: answerHandler)
     authSessionRoutes.get("users", User.parameter, use: userHandler)
     authSessionRoutes.get("users", use: allUsersHandler)
     authSessionRoutes.get("categories", use: allCategoriesHandler)
     authSessionRoutes.get("categories", Category.parameter,
                           use: categoryHandler)
-    
     authSessionRoutes.get("login", use: loginHandler)
     authSessionRoutes.post(LoginPostData.self,
                            at: "login",
@@ -61,6 +51,16 @@ struct WebsiteController: RouteCollection {
                          use: editQuestionPostHandler)
     protectedRoutes.post("questions", Question.parameter, "delete",
                          use: deleteQuestionHandler)
+    protectedRoutes.get("answers", "create", use: createAnswerHandler)
+    protectedRoutes.post(CreateAnswerData.self,
+                         at: "answers", "create",
+                         use: createAnswerPostHandler)
+    protectedRoutes.get("answers", Answer.parameter, "edit",
+                        use: editAnswerHandler)
+    protectedRoutes.post("answers", Answer.parameter, "edit",
+                         use: editAnswerPostHandler)
+    protectedRoutes.post("answers", Answer.parameter, "delete",
+                         use: deleteAnswerHandler)
   }
   
   /// Gets rendered index page `View`.
@@ -212,18 +212,24 @@ struct WebsiteController: RouteCollection {
   
   func createAnswerHandler(_ req: Request) throws -> Future<View> {
     let context = CreateAnswerContext(
-      users: User.query(on: req).all(),
       questions: Question.query(on: req).all())
     return try req.view().render("createAnswer", context)
   }
 
-  func createAnswerPostHandler(_ req: Request, answer: Answer) throws -> Future<Response> {
+  func createAnswerPostHandler(
+    _ req: Request,
+    data: CreateAnswerData
+  ) throws -> Future<Response> {
+    let user = try req.requireAuthenticated(User.self)
+    let answer = try Answer(answer: data.answer,
+                        userID: user.requireID(),
+                        questionID: data.questionID)
     return answer.save(on: req)
       .map(to: Response.self) { answer in
-        guard let _ = answer.id else {
+        guard let id = answer.id else {
           throw Abort(.internalServerError)
         }
-        return req.redirect(to: "/")
+        return req.redirect(to: "/answers/\(id)")
     }
   }
   
@@ -302,21 +308,6 @@ struct WebsiteController: RouteCollection {
           return categoryResults.flatten(on: req).transform(to: redirect)
         }
     }
-//    return try flatMap(
-//      to: Response.self,
-//      req.parameters.next(Question.self),
-//      req.content.decode(Question.self)) { question, data in
-//        question.question = data.question
-//        question.detail = data.detail
-//        question.userID = data.userID
-//
-//        guard let id = question.id else {
-//          throw Abort(.internalServerError)
-//        }
-//
-//        let redirect = req.redirect(to: "/questions/\(id)")
-//        return question.save(on: req).transform(to: redirect)
-//    }
   }
   
   func editAnswerHandler(_ req: Request) throws -> Future<View> {
@@ -326,8 +317,7 @@ struct WebsiteController: RouteCollection {
           .flatMap(to: View.self) { question in
             let context = EditAnswerContext(
               questions: Question.query(on: req).all(),
-              answer: answer,
-              users: User.query(on: req).all())
+              answer: answer)
             return try req.view().render("createAnswer", context)
         }
     }
@@ -337,14 +327,14 @@ struct WebsiteController: RouteCollection {
     return try flatMap(
       to: Response.self,
       req.parameters.next(Answer.self),
-      req.content.decode(Answer.self)) { answer, data in
+      req.content.decode(CreateAnswerData.self)) { answer, data in
+        let user = try req.requireAuthenticated(User.self)
         answer.answer = data.answer
-        answer.userID = data.userID
+        answer.userID = try user.requireID()
         
         guard let id = answer.id else {
           throw Abort(.internalServerError)
         }
-        
         let redirect = req.redirect(to: "/answers/\(id)")
         
         return answer.save(on: req).transform(to: redirect)

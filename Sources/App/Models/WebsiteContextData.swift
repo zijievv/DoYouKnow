@@ -76,7 +76,6 @@ struct CategoryContext: Encodable {
 
 /// Stores the required data when cerating or editing a question.
 struct CreateQuestionData: Content {
-//  let userID: User.ID
   let question: String
   let detail: String
   let categories: [String]?
@@ -84,21 +83,23 @@ struct CreateQuestionData: Content {
 
 struct CreateQuestionContext: Encodable {
   let title = "Create A Question"
-//  let users: Future<[User]>
   /// Supports The Cross-Site Request Forgery token.
   let csrfToken: String
 }
 
+struct CreateAnswerData: Content {
+  let questionID: Question.ID
+  let answer: String
+}
+
 struct CreateAnswerContext: Encodable {
   let title = "Write Your Answer"
-  let users: Future<[User]>
   let questions: Future<[Question]>
 }
 
 struct EditQuestionContext: Encodable {
   let title = "Edit Question"
   let question: Question
-//  let users: Future<[User]>
   let editing = true
   let categories: Future<[Category]>
 }
@@ -107,7 +108,6 @@ struct EditAnswerContext: Encodable {
   let title = "Edit Answer"
   let questions: Future<[Question]>
   let answer: Answer
-  let users: Future<[User]>
   let editing = true
 }
 
