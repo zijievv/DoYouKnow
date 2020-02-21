@@ -1,7 +1,7 @@
 #set("content") {
 <h1>#(question.question)</h1>
 #if(question.detail) {
-<p>#(question.detail)</p>
+<pre>#(question.detail)</pre>
 }
 <footer>
   <i>
@@ -30,6 +30,7 @@
   <input class="btn btn-danger" type="submit" value="Delete" />
 </form>
 
+<hr />
 <p>&nbsp;</p>
 <h2>Answers
   &nbsp;
@@ -37,11 +38,17 @@
     Write an answer 📝
   </a>
 </h2>
+
+#if(count(answersData) < 1) {
+  &nbsp;
+  <h3>Here are not any answers yet!</h3>
+}
+
 #for(answerData in answersData) {
-<article class="forecast" id="answer-item">
+<article class="forecast">
   <hr />
   <a href="/answers/#(answerData.answer.id)">
-    <p>#(answerData.answer.answer)</p>
+    <pre id="show-two-lines">#(answerData.answer.answer)</pre>
   </a>
   <footer>
     <i>

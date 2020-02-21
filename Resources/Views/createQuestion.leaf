@@ -13,9 +13,9 @@
   <div class="form-group">
     <label for="detail">Description</label>
     #if(editing){
-    <textarea name="detail" class="form-control" id="detail" rows="7" cols="42">#(question.detail)</textarea>
+    <textarea name="detail" class="form-control" id="detail" rows="7" cols="42" wrap="soft">#(question.detail)</textarea>
     } else {
-    <textarea name="detail" class="form-control" id="detail" rows="7" cols="42">
+    <textarea name="detail" class="form-control" id="detail" rows="7" cols="42" wrap="soft">
     </textarea>
     }
   </div>
