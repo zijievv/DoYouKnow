@@ -89,7 +89,14 @@ public func configure(_ config: inout Config,
   migrations.add(model: Category.self, database: .mysql)
   migrations.add(model: QuestionCategoryPivot.self, database: .mysql)
   migrations.add(model: Token.self, database: .mysql)
-  migrations.add(migration: AdminUser.self, database: .mysql)
+//  migrations.add(migration: AdminUser.self, database: .mysql)
+  migrations.add(migration: MakeCategoriesUnique.self, database: .mysql)
+  switch env {
+  case .development, .testing:
+    migrations.add(migration: AdminUser.self, database: .mysql)
+  default:
+    break
+  }
   services.register(migrations)
   
   // Adds the Fluent commands to application, which allows you to manually
