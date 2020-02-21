@@ -65,7 +65,6 @@
 
     <div class="container mt-3">
       #get(content)
-      <p>#if(!userLoggedIn) { not logged in}else { already logged in}</p>
     </div>
     
     #if(showCookieMessage) {
