@@ -106,12 +106,14 @@ struct WebsiteController: RouteCollection {
                   AnswerData(answer: answer,
                              user: answer.user.get(on: req))
                 }
+                let userLoggedIn = try req.requireAuthenticated(User.self)
                 let context = QuestionContext(
                   title: question.question,
                   question: question,
                   userOfQuestion: userOfQuestion,
                   categories: categories,
-                  answersData: answersData)
+                  answersData: answersData,
+                  userLoggedIn: userLoggedIn)
                 return try req.view().render("question", context)
             }
         }
@@ -127,12 +129,15 @@ struct WebsiteController: RouteCollection {
               .flatMap(to: View.self) { question in
                 return question.user.get(on: req)
                   .flatMap(to: View.self) { userOfQuestion in
+                    let userLoggedIn = try req
+                      .requireAuthenticated(User.self)
                     let context = AnswerContext(
                       title: question.question,
                       question: question,
                       userOfQuestion: userOfQuestion,
                       answer: answer,
-                      userOfAnswer: userOfAnswer)
+                      userOfAnswer: userOfAnswer,
+                      userLoggedIn: userLoggedIn)
                     return try req.view().render("answer", context)
                 }
             }

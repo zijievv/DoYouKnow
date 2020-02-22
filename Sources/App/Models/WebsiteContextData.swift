@@ -27,9 +27,12 @@ struct QuestionContext: Encodable {
   let question: Question
   /// The user owning the question.
   let userOfQuestion: User
+  /// The question's categories
   let categories: Future<[Category]>
-  ///
+  /// The answers' data
   let answersData: [AnswerData]
+  /// Current logged-in user
+  let userLoggedIn: User
 }
 
 struct AnswerData: Encodable {
@@ -44,6 +47,8 @@ struct AnswerContext: Encodable {
   let userOfQuestion: User
   let answer: Answer
   let userOfAnswer: User
+  /// Current logged-in user
+  let userLoggedIn: User
 }
 
 /// Context for user page.
@@ -144,7 +149,7 @@ extension RegisterData: Validatable, Reflectable {
   static func validations() throws -> Validations<RegisterData> {
     var validations = Validations(RegisterData.self)
     try validations.add(\.name, .ascii)
-    try validations.add(\.username, .alphanumeric && .count(3...))
+    try validations.add(\.username, .ascii)
     try validations.add(
       \.password,
       .characterSet(.alphanumerics + .punctuationCharacters + .symbols)

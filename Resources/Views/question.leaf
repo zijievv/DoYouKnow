@@ -1,7 +1,7 @@
 #set("content") {
 <h1>#(question.question)</h1>
 #if(question.detail) {
-<pre>#(question.detail)</pre>
+<pre class="font-weight-normal" wrap="soft">#(question.detail)</pre>
 }
 <footer>
   <i>
@@ -22,6 +22,8 @@
 </div>
 }
 
+#if(userLoggedIn.id == userOfQuestion.id) {
+<p>userloggedin is question's user</p>
 &nbsp;
 <form method="post" action="/questions/#(question.id)/delete">
   <a class="btn btn-primary" href="/questions/#(question.id)/edit" role="button">
@@ -29,6 +31,7 @@
   </a>&nbsp;
   <input class="btn btn-danger" type="submit" value="Delete" />
 </form>
+}
 
 <hr />
 <p>&nbsp;</p>
@@ -48,7 +51,7 @@
 <article class="forecast">
   <hr />
   <a href="/answers/#(answerData.answer.id)">
-    <pre id="show-two-lines">#(answerData.answer.answer)</pre>
+    <pre class="font-weight-normal" wrap="soft" id="show-two-lines">#(answerData.answer.answer)</pre>
   </a>
   <footer>
     <i>

@@ -13,7 +13,7 @@
           <h2>
             <a href="/questions/#(question.id)">#(question.question)</a>
           </h2>
-          <pre id="show-two-lines">#(question.detail)</pre>
+          <pre class="font-weight-normal" wrap="soft" id="show-two-lines">#(question.detail)</pre>
         </article>
       </td>
     </tr>
