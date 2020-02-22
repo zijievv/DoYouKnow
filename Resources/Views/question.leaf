@@ -22,7 +22,6 @@
 </footer>
 
 #if(userLoggedIn.id == userOfQuestion.id) {
-<p>userloggedin is question's user</p>
 &nbsp;
 <form method="post" action="/questions/#(question.id)/delete">
   <a class="btn btn-primary" href="/questions/#(question.id)/edit" role="button">
