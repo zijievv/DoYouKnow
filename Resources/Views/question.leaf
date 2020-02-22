@@ -1,17 +1,5 @@
 #set("content") {
-<h1>#(question.question)</h1>
-#if(question.detail) {
-<pre class="font-weight-normal" wrap="soft">#(question.detail)</pre>
-}
-<footer>
-  <i>
-    <a href="/users/#(userOfQuestion.id)">#(userOfQuestion.name)</a>
-  </i>
-</footer>
-
 #if(count(categories) > 0) {
-<h2>Categories</h2>
-
 <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
   #for(category in categories) {
   <form class="form-inline" action="/categories/#(category.id)" method="GET">
@@ -21,6 +9,17 @@
   }
 </div>
 }
+&nbsp;
+
+<h1>#(question.question)</h1>
+#if(question.detail) {
+<pre class="font-weight-normal" wrap="soft">#(question.detail)</pre>
+}
+<footer>
+  <i>
+    <a href="/users/#(userOfQuestion.id)">#(userOfQuestion.name)</a>
+  </i>
+</footer>
 
 #if(userLoggedIn.id == userOfQuestion.id) {
 <p>userloggedin is question's user</p>
