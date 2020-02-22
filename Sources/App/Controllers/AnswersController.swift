@@ -39,7 +39,7 @@ struct AnswersController: RouteCollection {
   }
   
   // MARK:- About `Answer`.
-  /// Gets all the questions.
+  /// Gets all the answers.
   ///
   /// Route at `/api/answers/`.
   func getAllHandler(_ req: Request) throws -> Future<[Answer]> {

@@ -55,7 +55,7 @@ struct CategoriesController: RouteCollection {
     return category.save(on: req)
   }
   
-  /// Updates a answer with specified ID.
+  /// Updates a category with specified ID.
   ///
   /// Route at `/api/categories/<category ID>`.
   func updateHandler(_ req: Request) throws -> Future<Category> {
@@ -69,7 +69,7 @@ struct CategoriesController: RouteCollection {
     }
   }
   
-  /// Deletes a answer with specified ID.
+  /// Deletes a category with specified ID.
   ///
   /// Route at `/api/categories/<category ID>`.
   ///
@@ -82,7 +82,7 @@ struct CategoriesController: RouteCollection {
   }
   
   // MARK:- About `Question`.
-  /// Gets the questions tagged by the category.
+  /// Gets all the questions tagged by the category.
   ///
   /// Route at `/api/categories/<category ID>/questions/`.
   func getQuestionsHandler(_ req: Request) throws -> Future<[Question]> {
