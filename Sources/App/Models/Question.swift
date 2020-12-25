@@ -6,70 +6,70 @@
 //  Copyright © 2020 Zijie Wang. All rights reserved.
 //
 
-import Vapor
 import FluentMySQL
+import Vapor
 
 /// Stores the submitted questions of users.
 final class Question: Codable {
-  /// The ID of the question.
-  var id: Int?
-  /// The question.
-  var question: String
-  /// The detail of the question.
-  var detail: String
-  /// The user's ID.
-  var userID: User.ID
-  
-  /// Creates a `Question` instance.
-  ///
-  /// - Parameters:
-  ///   - question: The question.
-  ///   - detail: The detail of the question.
-  ///   - userID: The user's ID.
-  init(question: String, detail: String = "", userID: User.ID) {
-    self.question = question
-    self.detail = detail
-    self.userID = userID
-  }
+    /// The ID of the question.
+    var id: Int?
+    /// The question.
+    var question: String
+    /// The detail of the question.
+    var detail: String
+    /// The user's ID.
+    var userID: User.ID
+
+    /// Creates a `Question` instance.
+    ///
+    /// - Parameters:
+    ///   - question: The question.
+    ///   - detail: The detail of the question.
+    ///   - userID: The user's ID.
+    init(question: String, detail: String = "", userID: User.ID) {
+        self.question = question
+        self.detail = detail
+        self.userID = userID
+    }
 }
 
 extension Question {
-  /// The computed property gets the `User` object who owns the question.
-  var user: Parent<Question, User> {
-    return parent(\.userID)
-  }
-  
-  /// The computed property gets the owned `Answer` objects.
-  var answers: Children<Question, Answer> {
-    return children(\.questionID)
-  }
-  
-  /// The computed property gets the question's categories.
-  var categories: Siblings<Question, Category, QuestionCategoryPivot> {
-    return siblings()
-  }
+    /// The computed property gets the `User` object who owns the question.
+    var user: Parent<Question, User> {
+        return parent(\.userID)
+    }
+
+    /// The computed property gets the owned `Answer` objects.
+    var answers: Children<Question, Answer> {
+        return children(\.questionID)
+    }
+
+    /// The computed property gets the question's categories.
+    var categories: Siblings<Question, Category, QuestionCategoryPivot> {
+        return siblings()
+    }
 }
 
 /// Allows `Question` to be used as a dynamis migration.
 extension Question: Migration {
-  static func prepare(on connection: MySQLConnection) -> Future<Void> {
-    // Create the table for `Question` in the database.
-    return Database.create(self, on: connection) { builder in
-      // The `String` type property `detail` should be type `TEXT` in MySQL
-      // database. Cannot use `addProperties(to:)` to add all the fields to
-      // the database, otherwise the field `detail` will be setted up by
-      // default as `VARCHAR`.
-      builder.field(for: \.id, type: .bigint(20), .primaryKey)
-      builder.field(for: \.question, type: .varchar(255))
-      builder.field(for: \.detail, type: .text)
-      builder.field(for: \.userID, type: .varbinary(16))
-      
-      // Add a reference between the userID on `Question` and the id property
-      // on `User`. This sets up the foreign key constraint between the
-      // two tables.
-      builder.reference(from: \.userID, to: \User.id)
+    static func prepare(on connection: MySQLConnection) -> Future<Void> {
+        // Create the table for `Question` in the database.
+        return Database.create(self, on: connection) { builder in
+            // The `String` type property `detail` should be type `TEXT` in MySQL
+            // database. Cannot use `addProperties(to:)` to add all the fields to
+            // the database, otherwise the field `detail` will be setted up by
+            // default as `VARCHAR`.
+            builder.field(for: \.id, type: .bigint(20), .primaryKey)
+            builder.field(for: \.question, type: .varchar(255))
+            builder.field(for: \.detail, type: .text)
+            builder.field(for: \.userID, type: .varbinary(16))
+
+            // Add a reference between the userID on `Question` and the id property
+            // on `User`. This sets up the foreign key constraint between the
+            // two tables.
+            builder.reference(from: \.userID, to: \User.id)
+        }
     }
-  }
 }
 
 /// Allows `Question` to be encoded to and decoded from HTTP messages.
